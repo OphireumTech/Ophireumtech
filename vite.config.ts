@@ -81,7 +81,7 @@ export default defineConfig(() => {
   return {
     // Required because the site is deployed under:
     // https://ophireumtech.github.io/Ophireumtech/
-    base: '/Ophireumtech/',
+    base: '/',
 
     plugins: [
       react(),
