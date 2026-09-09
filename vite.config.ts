@@ -1,22 +1,23 @@
-export default defineConfig(() => {
-  return {
-    base: '/Ophireumtech/',
+import tailwindcss from '@tailwindcss/vite';
+import react from '@vitejs/plugin-react';
+import {fileURLToPath, URL} from 'node:url';
+import {defineConfig} from 'vite';
 
-    plugins: [react(), tailwindcss(), aistudioMediaPlugin()],
+export default defineConfig({
+  base: '/Ophireumtech/',
 
-    resolve: {
-      alias: {
-        '@': path.resolve(__dirname, '.'),
-      },
+  plugins: [
+    react(),
+    tailwindcss(),
+  ],
+
+  resolve: {
+    alias: {
+      '@': fileURLToPath(new URL('.', import.meta.url)),
     },
+  },
 
-    build: {
-      outDir: 'dist',
-    },
-
-    server: {
-      hmr: process.env.DISABLE_HMR !== 'true',
-      watch: process.env.DISABLE_HMR === 'true' ? null : {},
-    },
-  };
+  build: {
+    outDir: 'dist',
+  },
 });
