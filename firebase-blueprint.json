@@ -1,0 +1,201 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User account credential profile",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "fullName": { "type": "string" },
+        "role": { "type": "string", "enum": ["customer", "support_agent", "finance_reviewer", "license_admin", "super_admin"] },
+        "isEmailVerified": { "type": "boolean" },
+        "mfaEnabled": { "type": "boolean" },
+        "starterPurchased": { "type": "boolean" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["uid", "email", "role", "createdAt"]
+    },
+    "LicensePlan": {
+      "title": "LicensePlan",
+      "description": "Commercial licensing plans with hard constraints",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "slug": { "type": "string" },
+        "priceUSDT": { "type": "number" },
+        "validityDays": { "type": "number" },
+        "riskSettingPct": { "type": "number" },
+        "lotSetting": { "type": "number" },
+        "suggestedEquityUSD": { "type": "string" },
+        "signalsCount": { "type": "number" },
+        "isTrial": { "type": "boolean" },
+        "features": { "type": "array" }
+      },
+      "required": ["id", "name", "priceUSDT", "validityDays", "lotSetting"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer purchase order",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "planId": { "type": "string" },
+        "planName": { "type": "string" },
+        "amountUSDT": { "type": "number" },
+        "paymentMethod": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "under_review", "confirmed", "rejected", "refunded"] },
+        "depositAddress": { "type": "string" },
+        "txHash": { "type": "string" },
+        "invoiceId": { "type": "string" },
+        "licenseId": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "confirmedAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "planId", "amountUSDT", "status", "createdAt"]
+    },
+    "License": {
+      "title": "License",
+      "description": "Account-bound algorithmic software licence",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "planId": { "type": "string" },
+        "planName": { "type": "string" },
+        "status": { "type": "string" },
+        "validityDays": { "type": "number" },
+        "riskSettingPct": { "type": "number" },
+        "lotSetting": { "type": "number" },
+        "boundMt5Account": { "type": "string" },
+        "brokerName": { "type": "string" },
+        "brokerServer": { "type": "string" },
+        "accountType": { "type": "string" },
+        "activatedAt": { "type": "string" },
+        "expiresAt": { "type": "string" },
+        "isAutomationPaused": { "type": "boolean" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "planId", "status", "createdAt"]
+    },
+    "UnbindingRequest": {
+      "title": "UnbindingRequest",
+      "description": "Request to unbind or transfer MT5 account",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "licenseId": { "type": "string" },
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "currentLogin": { "type": "string" },
+        "currentBroker": { "type": "string" },
+        "reason": { "type": "string" },
+        "newLogin": { "type": "string" },
+        "newBroker": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "reviewedBy": { "type": "string" },
+        "reviewNotes": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "licenseId", "userId", "reason", "status", "createdAt"]
+    },
+    "SupportTicket": {
+      "title": "SupportTicket",
+      "description": "Customer technical support inquiries",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "category": { "type": "string" },
+        "priority": { "type": "string" },
+        "status": { "type": "string" },
+        "subject": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "category", "subject", "status", "createdAt"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Immutable security and state-transition logs",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "actorId": { "type": "string" },
+        "actorRole": { "type": "string" },
+        "action": { "type": "string" },
+        "resourceType": { "type": "string" },
+        "resourceId": { "type": "string" },
+        "previousValue": { "type": "string" },
+        "newValue": { "type": "string" },
+        "reason": { "type": "string" },
+        "ipAddress": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "result": { "type": "string" }
+      },
+      "required": ["id", "actorId", "actorRole", "action", "resourceType", "timestamp", "result"]
+    },
+    "SystemSettings": {
+      "title": "SystemSettings",
+      "description": "Global operational and emergency settings",
+      "type": "object",
+      "properties": {
+        "webrequestUrl": { "type": "string" },
+        "approvedSymbols": { "type": "array" },
+        "contactEmail": { "type": "string" },
+        "supportWhatsApp": { "type": "string" },
+        "mobileContact": { "type": "string" },
+        "officialDomain": { "type": "string" },
+        "usdtTrc20DepositAddress": { "type": "string" },
+        "usdtErc20DepositAddress": { "type": "string" },
+        "globalEmergencyStop": { "type": "boolean" },
+        "globalStopReason": { "type": "string" },
+        "maintenanceMode": { "type": "boolean" },
+        "vpsAnnualPriceUSDT": { "type": "number" }
+      },
+      "required": ["webrequestUrl", "contactEmail", "globalEmergencyStop"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles and credentials"
+    },
+    "/plans/{planId}": {
+      "schema": "LicensePlan",
+      "description": "Authoritative commercial licensing packages"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Customer purchase orders"
+    },
+    "/licenses/{licenseId}": {
+      "schema": "License",
+      "description": "Issued software licenses"
+    },
+    "/unbinding_requests/{requestId}": {
+      "schema": "UnbindingRequest",
+      "description": "MT5 account transfer requests"
+    },
+    "/support_tickets/{ticketId}": {
+      "schema": "SupportTicket",
+      "description": "Support tickets and communication threads"
+    },
+    "/audit_logs/{logId}": {
+      "schema": "AuditLog",
+      "description": "Immutable operational audit records"
+    },
+    "/system_settings/{settingId}": {
+      "schema": "SystemSettings",
+      "description": "Global infrastructure and emergency settings"
+    }
+  }
+}

@@ -1,0 +1,27 @@
+OPHIREUM EXPERT ASSISTANT – MT5 INSTALLATION & SETUP GUIDE
+============================================================
+
+1. TERMINAL WEBREQUEST CONFIGURATION (MANDATORY):
+   In MetaTrader 5:
+   a. Click Tools -> Options (or press Ctrl + O).
+   b. Select the "Expert Advisors" tab.
+   c. Check "Allow WebRequest for listed URL:".
+   d. Click the green (+) icon and enter:
+      https://ophireum.dhenzecapital.com
+      http://0.0.0.0:3000 (if testing in local container)
+   e. Ensure "Allow algorithmic trading" is checked.
+   f. Click OK.
+
+2. EA BINARY PLACEMENT:
+   a. Click File -> Open Data Folder.
+   b. Navigate to MQL5 -> Experts -> Advisors.
+   c. Copy "OPHIREUM_Expert_Assistant_v2.4.1.ex5" into this folder.
+   d. In the MT5 Navigator panel, right-click "Expert Advisors" and select "Refresh".
+
+3. CHART ATTACHMENT:
+   a. Open the chart for XAUUSD (Gold) on timeframe M15 or H1.
+   b. Drag "OPHIREUM Expert Assistant" onto the chart.
+   c. In the Inputs tab:
+      - LicenseKey: Enter your OPHIREUM License ID (e.g., OPH-XXXX-XXXX-XAU)
+      - EnforceStrictRisk: true
+   d. Click OK. Verify that the top-right corner shows a smiling icon and "Licence Verified".

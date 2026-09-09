@@ -1,0 +1,9 @@
+OPHIREUM EXPERT ASSISTANT v2.4.1 [PRODUCTION COMPILED MQL5 BINARY]
+Architecture: MetaTrader 5 (x64) Algorithmic Engine
+Symbol Target: XAUUSD (Gold Only)
+Handshake Endpoint: https://ophireum.dhenzecapital.com/api/v1/ea/validate
+Telemetry Endpoint: https://ophireum.dhenzecapital.com/api/v1/ea/heartbeat
+SHA-256 Checksum: 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08
+Build Date: 2026-03-01T00:00:00Z
+Compiler: MetaQuotes Language 5 Compiler v4150
+Integrity: Cryptographically signed by OPHIREUM Algorithmic Financial Engineering Desk
