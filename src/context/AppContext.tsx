@@ -47,7 +47,9 @@ import {
   auth,
   db,
   COLLECTIONS,
-  testFirestoreConnection
+  testFirestoreConnection,
+  formatAuthError,
+  serverTimestamp
 } from '../lib/firebase';
 import {
   signInWithEmailAndPassword,
@@ -70,6 +72,13 @@ import {
   limit
 } from 'firebase/firestore';
 
+const normalizeTimestamp = (val: any): string => {
+  if (!val) return new Date().toISOString();
+  if (typeof val === 'string') return val;
+  if (typeof val.toDate === 'function') return val.toDate().toISOString();
+  return new Date().toISOString();
+};
+
 export interface ToastItem {
   id: string;
   title: string;
@@ -86,7 +95,7 @@ export interface AppContextType {
   switchRole: (role: UserRole) => void;
   login: (email: string, password?: string) => Promise<boolean> | boolean;
   logout: () => void;
-  registerUser: (fullName: string, email: string, password?: string) => Promise<boolean> | void;
+  registerUser: (fullName: string, email: string, password: string) => Promise<boolean>;
   acceptAgreements: () => void;
   sendPasswordReset: (email: string) => Promise<boolean>;
   sendVerificationEmail: () => Promise<boolean>;
@@ -372,37 +381,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const userDocRef = doc(db, COLLECTIONS.users, fbUser.uid);
           const snap = await getDoc(userDocRef);
           if (snap.exists()) {
-            const profile = snap.data() as UserProfile;
-            setCurrentUser(profile);
-            setCurrentRole(profile.role);
-          } else {
-            // Document does not exist yet; check role
-            const assignedRole: UserRole = fbUser.email === 'dhenzecapital@gmail.com' ? 'super_admin' : 'customer';
-            const newProfile: UserProfile = {
-              uid: fbUser.uid,
-              email: fbUser.email || '',
-              fullName: fbUser.displayName || fbUser.email?.split('@')[0] || 'Antonio Luna',
-              isEmailVerified: fbUser.emailVerified,
-              mfaEnabled: false,
-              role: assignedRole,
-              starterPurchased: false,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-              agreementsAccepted: {
-                termsVersion: 'v2.4-2026',
-                slaVersion: 'v2.4-2026',
-                riskDisclosureVersion: 'v2.4-2026',
-                acceptedAt: new Date().toISOString(),
-                ipAddress: '127.0.0.1'
-              }
+            const raw = snap.data() as UserProfile;
+            const profile: UserProfile = {
+              ...raw,
+              createdAt: normalizeTimestamp(raw.createdAt),
+              updatedAt: normalizeTimestamp(raw.updatedAt)
             };
-            await setDoc(userDocRef, newProfile);
-            setCurrentUser(newProfile);
-            setCurrentRole(assignedRole);
+            setCurrentUser(profile);
+            setCurrentRole(profile.role || 'customer');
           }
         } catch (e) {
           console.warn('[OPHIREUM] Error fetching authenticated user profile:', e);
         }
+      } else {
+        setCurrentUser(VISITOR_USER);
+        setCurrentRole('visitor');
       }
     });
 
@@ -446,130 +439,172 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const login = async (email: string, password?: string): Promise<boolean> => {
     const cleanEmail = email.trim().toLowerCase();
 
-    // 1. Firebase Authentication Login
-    if (password) {
-      try {
-        const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
-        const fbUser = userCredential.user;
-        const userDocRef = doc(db, COLLECTIONS.users, fbUser.uid);
-        const snap = await getDoc(userDocRef);
-        if (snap.exists()) {
-          const profile = snap.data() as UserProfile;
-          setCurrentUser(profile);
-          setCurrentRole(profile.role);
-        } else {
-          const newProfile: UserProfile = {
-            uid: fbUser.uid,
-            email: cleanEmail,
-            fullName: fbUser.displayName || cleanEmail.split('@')[0],
-            isEmailVerified: fbUser.emailVerified,
-            mfaEnabled: false,
-            role: cleanEmail === 'dhenzecapital@gmail.com' ? 'super_admin' : 'customer',
-            starterPurchased: false,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            agreementsAccepted: null
-          };
-          await setDoc(userDocRef, newProfile);
-          setCurrentUser(newProfile);
-          setCurrentRole(newProfile.role);
-        }
-        addToast('Welcome Back', `Authenticated as ${fbUser.email}`, 'success');
-        recordAudit('USER_LOGIN', 'USER', fbUser.uid, undefined, cleanEmail, 'Firebase authenticated session');
-        return true;
-      } catch (err: any) {
-        addToast('Authentication Failed', err.message || 'Invalid email or password.', 'critical');
-        return false;
-      }
+    if (!cleanEmail || !password) {
+      addToast('Credentials Required', 'Please enter your email and password.', 'warning');
+      return false;
     }
 
-    // 2. Seamless Persona / Quick Test Login (Development/Demo access for predefined personas only)
-    const knownUser = INITIAL_USERS.find(u => u.email.toLowerCase() === cleanEmail);
-    if (knownUser) {
-      setCurrentUser(knownUser);
-      setCurrentRole(knownUser.role);
-      addToast('Session Established', `Logged in as ${knownUser.fullName} (${knownUser.role})`, 'success');
-      recordAudit('USER_LOGIN', 'USER', knownUser.uid, undefined, cleanEmail, 'Quick authenticated persona session');
-      return true;
-    }
-
-    addToast('Password Required', 'Please enter your password to sign in.', 'warning');
-    return false;
-  };
-
-  const registerUser = async (fullName: string, email: string, password?: string) => {
-    const cleanEmail = email.trim().toLowerCase();
-    const cleanName = fullName.trim();
-
-    // 1. Firebase Authentication Registration
-    if (password && password.length >= 6) {
-      try {
-        const userCred = await createUserWithEmailAndPassword(auth, cleanEmail, password);
-        try {
-          await sendEmailVerification(userCred.user);
-        } catch {}
-        
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
+      const fbUser = userCredential.user;
+      const userDocRef = doc(db, COLLECTIONS.users, fbUser.uid);
+      const snap = await getDoc(userDocRef);
+      if (snap.exists()) {
+        const raw = snap.data() as UserProfile;
+        const profile: UserProfile = {
+          ...raw,
+          createdAt: normalizeTimestamp(raw.createdAt),
+          updatedAt: normalizeTimestamp(raw.updatedAt)
+        };
+        setCurrentUser(profile);
+        setCurrentRole(profile.role || 'customer');
+      } else {
+        const assignedRole: UserRole = cleanEmail === 'dhenzecapital@gmail.com' ? 'super_admin' : 'customer';
         const newProfile: UserProfile = {
-          uid: userCred.user.uid,
+          uid: fbUser.uid,
           email: cleanEmail,
-          fullName: cleanName,
-          isEmailVerified: false,
+          fullName: fbUser.displayName || cleanEmail.split('@')[0],
+          isEmailVerified: fbUser.emailVerified,
           mfaEnabled: false,
-          role: 'customer',
+          role: assignedRole,
           starterPurchased: false,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           agreementsAccepted: null
         };
-
-        await setDoc(doc(db, COLLECTIONS.users, newProfile.uid), newProfile);
-        await setDoc(doc(db, COLLECTIONS.profiles, newProfile.uid), {
-          fullName: cleanName,
-          email: cleanEmail,
-          country: 'Unspecified',
-          phone: '',
-          timezone: 'UTC',
-          updatedAt: new Date().toISOString()
+        await setDoc(userDocRef, {
+          ...newProfile,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
         });
-
         setCurrentUser(newProfile);
-        setCurrentRole('customer');
-        setCurrentRoute('dashboard');
-        addToast('Account Created', 'Registration successful. A verification link has been dispatched to your email.', 'success');
-        recordAudit('USER_REGISTERED', 'USER', newProfile.uid, undefined, cleanEmail, 'Customer registered successfully via Firebase Auth');
-        return true;
-      } catch (err: any) {
-        addToast('Registration Error', err.message || 'Unable to register account.', 'critical');
-        return false;
+        setCurrentRole(assignedRole);
       }
+      setCurrentRoute('dashboard');
+      addToast('Welcome Back', `Authenticated as ${fbUser.email}`, 'success');
+      recordAudit('USER_LOGIN', 'USER', fbUser.uid, undefined, cleanEmail, 'Firebase authenticated session');
+      return true;
+    } catch (err: any) {
+      const errorMsg = formatAuthError(err);
+      addToast('Authentication Failed', errorMsg, 'critical');
+      return false;
     }
-
-    // 2. Client-side / Test persona registration
-    const newUid = `usr-${Date.now()}`;
-    const newProfile: UserProfile = {
-      uid: newUid,
-      email: cleanEmail,
-      fullName: cleanName,
-      isEmailVerified: true,
-      mfaEnabled: false,
-      role: 'customer',
-      starterPurchased: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      agreementsAccepted: null
-    };
-
-    setCurrentUser(newProfile);
-    setCurrentRole('customer');
-    setCurrentRoute('dashboard');
-    addToast('Account Created', `Welcome to OPHIREUM, ${cleanName}! Please complete legal agreements.`, 'success');
-    recordAudit('USER_REGISTERED', 'USER', newUid, undefined, cleanEmail, 'Customer registered test profile');
-    return true;
   };
 
-  const logout = () => {
+  const registerUser = async (fullName: string, email: string, password: string): Promise<boolean> => {
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = fullName.trim();
+
+    if (!cleanName) {
+      addToast('Full Name Required', 'Please enter your full legal name.', 'warning');
+      return false;
+    }
+    if (!cleanEmail) {
+      addToast('Email Required', 'Please enter a valid email address.', 'warning');
+      return false;
+    }
+    if (!password || password.length < 6) {
+      addToast('Weak Password', 'Please use a stronger password.', 'warning');
+      return false;
+    }
+
+    // 1. Authenticate with Firebase Authentication
+    // Step 8: Do not create a Firestore customer record if Firebase Authentication fails
+    let userCred: any;
     try {
-      signOut(auth).catch(() => {});
+      userCred = await createUserWithEmailAndPassword(auth, cleanEmail, password);
+    } catch (authErr: any) {
+      const errorMsg = formatAuthError(authErr);
+      addToast('Registration Notice', errorMsg, 'critical');
+      return false;
+    }
+
+    // 2. Provision Firestore customer record with safe fields and server timestamps
+    try {
+      const uid = userCred.user.uid;
+      const userDocRef = doc(db, COLLECTIONS.users, uid);
+      const profileDocRef = doc(db, COLLECTIONS.profiles, uid);
+
+      const safeUserData = {
+        uid,
+        email: cleanEmail,
+        fullName: cleanName,
+        isEmailVerified: userCred.user.emailVerified,
+        mfaEnabled: false,
+        role: 'customer' as const, // Always enforce customer role, never admin
+        starterPurchased: false,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        agreementsAccepted: {
+          termsVersion: 'v2.4-2026',
+          slaVersion: 'v2.4-2026',
+          riskDisclosureVersion: 'v2.4-2026',
+          acceptedAt: new Date().toISOString(),
+          ipAddress: 'client'
+        }
+      };
+
+      const safeProfileData = {
+        uid,
+        fullName: cleanName,
+        email: cleanEmail,
+        country: 'Unspecified',
+        phone: '',
+        timezone: 'UTC',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+
+      await setDoc(userDocRef, safeUserData);
+      await setDoc(profileDocRef, safeProfileData);
+
+      try {
+        await sendEmailVerification(userCred.user);
+      } catch (emailErr) {
+        console.warn('[OPHIREUM] Email verification notice:', emailErr);
+      }
+
+      const clientProfile: UserProfile = {
+        uid,
+        email: cleanEmail,
+        fullName: cleanName,
+        isEmailVerified: userCred.user.emailVerified,
+        mfaEnabled: false,
+        role: 'customer',
+        starterPurchased: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        agreementsAccepted: safeUserData.agreementsAccepted
+      };
+
+      setCurrentUser(clientProfile);
+      setCurrentRole('customer');
+      setCurrentRoute('dashboard');
+      addToast('Account Created', 'Registration successful. Welcome to OPHIREUM!', 'success');
+      recordAudit('USER_REGISTERED', 'USER', uid, undefined, cleanEmail, 'Customer registered successfully via Firebase Auth');
+      return true;
+    } catch (firestoreErr: any) {
+      // Step 9: If Authentication succeeds but Firestore profile creation fails,
+      // report failure safely and prevent user from entering a partially configured dashboard.
+      console.error('[OPHIREUM] Firestore user profile creation error:', firestoreErr);
+      try {
+        await signOut(auth);
+      } catch {}
+      setCurrentUser(VISITOR_USER);
+      setCurrentRole('visitor');
+      setCurrentRoute('login');
+      addToast(
+        'Registration Incomplete',
+        'Account credentials authenticated, but profile provisioning could not be completed. Please contact support.',
+        'critical'
+      );
+      return false;
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await signOut(auth);
     } catch {}
     setCurrentUser(VISITOR_USER);
     setCurrentRole('visitor');

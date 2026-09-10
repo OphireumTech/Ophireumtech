@@ -26,6 +26,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ view }) => {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [termsAgreed, setTermsAgreed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,13 +34,13 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ view }) => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      addToast('Credentials Required', 'Please provide your email and password', 'warning');
+    if (!email.trim() || !password) {
+      addToast('Credentials Required', 'Please provide your email and password.', 'warning');
       return;
     }
     setIsSubmitting(true);
     try {
-      const ok = await login(email, password);
+      const ok = await login(email.trim(), password);
       if (ok) {
         setCurrentRoute('dashboard');
       }
@@ -50,21 +51,33 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ view }) => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName || !email || !password) {
-      addToast('Fields Required', 'Please complete all required fields', 'warning');
+    const cleanName = fullName.trim();
+    const cleanEmail = email.trim();
+
+    if (!cleanName) {
+      addToast('Full Name Required', 'Please enter your full legal name.', 'warning');
       return;
     }
-    if (password.length < 6) {
-      addToast('Password Strength', 'Password must contain at least 6 characters', 'warning');
+    if (!cleanEmail) {
+      addToast('Email Required', 'Please enter a valid email address.', 'warning');
+      return;
+    }
+    if (!password || password.length < 6) {
+      addToast('Weak Password', 'Password must contain at least 6 characters.', 'warning');
+      return;
+    }
+    if (confirmPassword && password !== confirmPassword) {
+      addToast('Password Mismatch', 'The passwords entered do not match. Please verify.', 'warning');
       return;
     }
     if (!termsAgreed) {
-      addToast('Terms Required', 'You must agree to the Terms of Use and Risk Disclosure', 'warning');
+      addToast('Agreements Required', 'You must agree to the Terms of Use and Risk Disclosure.', 'warning');
       return;
     }
+
     setIsSubmitting(true);
     try {
-      const ok = await registerUser(fullName, email, password);
+      const ok = await registerUser(cleanName, cleanEmail, password);
       if (ok) {
         setCurrentRoute('dashboard');
       }
@@ -236,6 +249,22 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ view }) => {
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full bg-[#111420] border border-[#232838] rounded-lg pl-9 pr-3 py-2.5 text-zinc-100 placeholder-zinc-600 focus:border-[#C9A227] outline-none transition-colors"
                   placeholder="Minimum 6 characters"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-zinc-400 mb-1 font-medium">Confirm Password</label>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-zinc-500 absolute left-3 top-3" />
+                <input
+                  id="auth-input-reg-confirm-password"
+                  type="password"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full bg-[#111420] border border-[#232838] rounded-lg pl-9 pr-3 py-2.5 text-zinc-100 placeholder-zinc-600 focus:border-[#C9A227] outline-none transition-colors"
+                  placeholder="Re-enter password"
                 />
               </div>
             </div>

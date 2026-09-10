@@ -21,7 +21,9 @@ import {
   getDoc,
   setDoc,
   getDocFromServer,
-  Firestore
+  Firestore,
+  serverTimestamp,
+  Timestamp
 } from 'firebase/firestore';
 import firebaseConfigJson from '../../firebase-applet-config.json';
 
@@ -95,6 +97,41 @@ export async function testFirestoreConnection(): Promise<boolean> {
     }
     // Missing document still proves connection succeeded
     return true;
+  }
+}
+
+export { serverTimestamp, Timestamp };
+
+/**
+ * Safe Firebase Authentication error message formatter.
+ * Maps Firebase Auth error codes to user-friendly messages.
+ * Never exposes internal configurations, stack traces, API keys, or database IDs.
+ */
+export function formatAuthError(error: any): string {
+  const code = error?.code || '';
+  switch (code) {
+    case 'auth/operation-not-allowed':
+      return 'Email/password registration is not enabled. Please contact support.';
+    case 'auth/email-already-in-use':
+      return 'An account already exists for this email. Please log in or reset your password.';
+    case 'auth/invalid-email':
+      return 'Please enter a valid email address.';
+    case 'auth/weak-password':
+      return 'Please use a stronger password.';
+    case 'auth/network-request-failed':
+      return 'Network error. Check your connection and try again.';
+    case 'auth/too-many-requests':
+      return 'Too many attempts. Please wait before trying again.';
+    case 'auth/user-not-found':
+    case 'auth/wrong-password':
+    case 'auth/invalid-credential':
+      return 'Invalid email or password. Please verify your credentials.';
+    case 'auth/user-disabled':
+      return 'This account has been disabled. Please contact support.';
+    case 'auth/requires-recent-login':
+      return 'Please sign in again to complete this sensitive operation.';
+    default:
+      return 'An unexpected error occurred during authentication. Please try again.';
   }
 }
 
