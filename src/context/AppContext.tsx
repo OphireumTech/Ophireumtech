@@ -571,8 +571,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       signOut(auth).catch(() => {});
     } catch {}
-    setCurrentUser(INITIAL_USERS[0]);
-    setCurrentRole('customer');
+    setCurrentUser(VISITOR_USER);
+    setCurrentRole('visitor');
     setCurrentRoute('home');
     addToast('Logged Out', 'You have been safely signed out.', 'info');
   };

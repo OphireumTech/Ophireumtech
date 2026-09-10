@@ -35,7 +35,6 @@ export const Header: React.FC = () => {
     currentRole,
     currentRoute,
     setCurrentRoute,
-    switchRole,
     logout,
     notifications,
     markNotificationRead,
@@ -45,20 +44,10 @@ export const Header: React.FC = () => {
   const [productMenuOpen, setProductMenuOpen] = useState(false);
   const [companyMenuOpen, setCompanyMenuOpen] = useState(false);
   const [helpMenuOpen, setHelpMenuOpen] = useState(false);
-  const [roleMenuOpen, setRoleMenuOpen] = useState(false);
   const [notifDrawerOpen, setNotifDrawerOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const unreadCount = notifications.filter(n => !n.read && (n.userId === currentUser.uid || n.userId === 'ALL')).length;
-
-  const roles: { key: UserRole; label: string; badgeColor: string }[] = [
-    { key: 'visitor', label: 'Visitor (Public)', badgeColor: 'bg-zinc-700 text-zinc-200' },
-    { key: 'customer', label: 'Customer (Trader)', badgeColor: 'bg-[#C9A227]/20 text-[#E4C765] border border-[#C9A227]/40' },
-    { key: 'support_agent', label: 'Support Agent', badgeColor: 'bg-blue-900/40 text-blue-300 border border-blue-700/50' },
-    { key: 'finance_reviewer', label: 'Finance Reviewer', badgeColor: 'bg-emerald-900/40 text-emerald-300 border border-emerald-700/50' },
-    { key: 'license_admin', label: 'Licence Admin', badgeColor: 'bg-amber-900/40 text-amber-300 border border-amber-700/50' },
-    { key: 'super_admin', label: 'Super Admin', badgeColor: 'bg-rose-900/40 text-rose-300 border border-rose-700/50' }
-  ];
 
   const handleNav = (route: string) => {
     setCurrentRoute(route);
@@ -104,47 +93,20 @@ export const Header: React.FC = () => {
               <span>EA API Studio</span>
             </button>
 
-            {/* Role Switcher Pill */}
-            <div className="relative">
-              <button
-                id="header-btn-role-switcher"
-                onClick={() => setRoleMenuOpen(!roleMenuOpen)}
-                className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#161922] hover:bg-[#1F2430] border border-[#2A3040] text-zinc-200 transition-colors cursor-pointer"
-              >
+            {/* Authenticated Status Badge */}
+            {currentUser?.uid && currentRole !== 'visitor' ? (
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#161922] border border-[#2A3040] text-zinc-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                 <span className="text-[10px] text-zinc-400 uppercase tracking-wider">Role:</span>
-                <span className="font-semibold text-[#E4C765] capitalize">
+                <span className="font-semibold text-[#E4C765] capitalize text-[11px]">
                   {currentRole.replace('_', ' ')}
                 </span>
-                <ChevronDown className="w-3 h-3 text-zinc-400" />
-              </button>
-
-              {roleMenuOpen && (
-                <div className="absolute right-0 mt-1.5 w-64 bg-[#111318] border border-[#2A3040] rounded-lg shadow-2xl p-2 z-50">
-                  <div className="text-[10px] uppercase font-bold tracking-wider text-zinc-400 px-2 py-1 mb-1 border-b border-zinc-800">
-                    Switch Test Persona
-                  </div>
-                  <div className="space-y-1">
-                    {roles.map(r => (
-                      <button
-                        key={r.key}
-                        onClick={() => {
-                          switchRole(r.key);
-                          setRoleMenuOpen(false);
-                        }}
-                        className={`w-full text-left px-2.5 py-1.5 rounded text-xs flex items-center justify-between transition-colors ${
-                          currentRole === r.key
-                            ? 'bg-[#C9A227]/15 text-[#E4C765] font-semibold'
-                            : 'text-zinc-300 hover:bg-zinc-800/60'
-                        }`}
-                      >
-                        <span>{r.label}</span>
-                        {currentRole === r.key && <span className="w-1.5 h-1.5 rounded-full bg-[#C9A227]"></span>}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#161922]/60 border border-[#2A3040]/50 text-zinc-400 text-[11px]">
+                <span>Public Access</span>
+              </div>
+            )}
           </div>
         </div>
       </div>

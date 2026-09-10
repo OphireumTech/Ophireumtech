@@ -25,7 +25,9 @@ interface LegalCenterProps {
     | 'legal-privacy'
     | 'legal-cookies'
     | 'legal-refunds'
-    | 'legal-acceptable-use';
+    | 'legal-acceptable-use'
+    | 'service-agreement'
+    | 'disclaimer';
 }
 
 export const LegalCenter: React.FC<LegalCenterProps> = ({ document }) => {
@@ -80,11 +82,13 @@ export const LegalCenter: React.FC<LegalCenterProps> = ({ document }) => {
         <h1 className="text-3xl sm:text-4xl font-display font-bold text-white">
           {document === 'legal-terms' && 'Terms of Use'}
           {document === 'legal-sla' && 'Software Licence Agreement (SLA)'}
+          {document === 'service-agreement' && 'Service & Operational Agreement'}
           {document === 'legal-risk' && 'Trading Risk & Operational Disclosure'}
           {document === 'legal-privacy' && 'Privacy & Data Protection Policy'}
           {document === 'legal-cookies' && 'Cookie Policy'}
           {document === 'legal-refunds' && 'Refund and Cancellation Policy'}
           {document === 'legal-acceptable-use' && 'Acceptable Use Policy'}
+          {document === 'disclaimer' && 'Financial & Regulatory Disclaimer'}
         </h1>
         <div className="flex items-center gap-4 text-xs text-zinc-500">
           <span>Effective Date: August 1, 2026</span>
@@ -244,6 +248,36 @@ export const LegalCenter: React.FC<LegalCenterProps> = ({ document }) => {
             <p className="text-zinc-400">
               Users may not: (1) attempt to flood or DDoS the WebRequest authorization endpoints; (2) tamper with request nonces or forge cryptographic signatures; (3) execute the software on unauthorized non-gold symbols; or (4) market or resell licences under affiliate or commission schemes.
             </p>
+          </div>
+        )}
+
+        {/* SERVICE AGREEMENT */}
+        {document === 'service-agreement' && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <h3 className="text-base font-bold text-white">1. Provision of Technical Infrastructure</h3>
+              <p className="text-zinc-400">
+                OPHIREUM Multimedia Production provides technical infrastructure services including license key issuance, MT5 WebRequest authentication, cloud licensing telemetry, and optional managed virtual private server (VPS) provisioning.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-base font-bold text-white">2. Service Level Commitments</h3>
+              <p className="text-zinc-400">
+                We maintain high availability for our cloud licensing verification cluster. Scheduled maintenance windows will be communicated via customer notifications in advance.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* REGULATORY DISCLAIMER */}
+        {document === 'disclaimer' && (
+          <div className="space-y-4">
+            <div className="p-4 rounded-xl bg-amber-950/30 border border-amber-800/40 text-amber-200 space-y-2">
+              <h3 className="text-base font-bold text-amber-300">Non-Fiduciary & Technology Status</h3>
+              <p className="text-xs sm:text-sm leading-relaxed">
+                OPHIREUM is purely a software and multimedia technology provider. OPHIREUM is not a broker, exchange, custodian, investment advisor, or portfolio manager. We do not handle, hold, or execute client fiat or brokerage funds. All financial trade executions occur directly on the client's independently chosen MetaTrader 5 broker.
+              </p>
+            </div>
           </div>
         )}
       </div>

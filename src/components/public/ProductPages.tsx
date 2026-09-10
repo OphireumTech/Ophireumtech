@@ -25,6 +25,7 @@ import {
 
 interface ProductPageProps {
   section: 
+    | 'product-overview'
     | 'product-ea'
     | 'mt5-integration'
     | 'licensing-info'
@@ -40,7 +41,7 @@ export const ProductPages: React.FC<ProductPageProps> = ({ section }) => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-16">
       {/* SECTION: OPHIREUM EXPERT ASSISTANT */}
-      {section === 'product-ea' && (
+      {(section === 'product-ea' || section === 'product-overview') && (
         <div className="space-y-12">
           <div className="max-w-3xl space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#141924] border border-[#C9A227]/30 text-[#E4C765] text-xs font-semibold">

@@ -112,6 +112,7 @@ export interface UnbindingRequest {
   currentBroker: string;
   reason: string;
   newLogin?: string;
+  newMt5Account?: string;
   newBroker?: string;
   status: 'pending' | 'approved' | 'rejected';
   reviewedBy?: string;
@@ -174,6 +175,7 @@ export interface Invoice {
 }
 
 export interface EAVersion {
+  id?: string;
   version: string;
   releaseDate: string;
   minSupportedVersion: string;
@@ -366,6 +368,8 @@ export interface AuditLog {
   action: string;
   resourceType: string;
   resourceId: string;
+  target?: string;
+  details?: string;
   previousValue?: string;
   newValue?: string;
   reason: string;
