@@ -2,6 +2,8 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  * OPHIREUM MetaTrader 5 EA Sandbox & Validation Simulator
+ * Strictly restricted to Staging/Development or authorized Staff (License Admin & Super Admin).
+ * Does NOT alter or write to production database records.
  */
 
 import React, { useState } from 'react';
@@ -19,21 +21,39 @@ import {
   Activity,
   Shield,
   Clock,
-  Cpu
+  Cpu,
+  Lock
 } from 'lucide-react';
+import { AccessDeniedPage } from '../common/AccessDeniedPage';
 
 export const EASimulator: React.FC = () => {
-  const { licenses, validateEA, settings, addToast } = useApp();
+  const { licenses, validateEA, settings, addToast, currentRole } = useApp();
 
-  const activeLicense = licenses.find(l => l.status === 'active') || licenses[0];
+  // Environment detection: in production, require license_admin or super_admin
+  const isProduction = process.env.NODE_ENV === 'production';
+  const isAuthorized = !isProduction || currentRole === 'license_admin' || currentRole === 'super_admin';
+
+  if (!isAuthorized) {
+    return (
+      <AccessDeniedPage
+        requiredRole="license_admin or super_admin"
+        currentRole={currentRole}
+        reason="The MT5 EA Sandbox Simulator is restricted to technical staff in production environments to prevent simulation confusion with live trading terminals."
+        returnPath="/"
+      />
+    );
+  }
+
+  // Find strictly user's active licence or fallback safely to standalone test data without leaking another customer's record
+  const activeLicense = licenses.find(l => l.status === 'active');
 
   // Simulator test parameters
-  const [testLicenseId, setTestLicenseId] = useState(activeLicense?.id || 'OPH-8924-4102-XAU');
-  const [testAccountNumber, setTestAccountNumber] = useState(activeLicense?.boundMt5Account || '7729014');
+  const [testLicenseId, setTestLicenseId] = useState(activeLicense?.id || 'OPH-TEST-SIMULATOR-XAU');
+  const [testAccountNumber, setTestAccountNumber] = useState(activeLicense?.boundMt5Account || '8849102');
   const [testBroker, setTestBroker] = useState(activeLicense?.brokerName || 'IC Markets (SC)');
   const [testServer, setTestServer] = useState(activeLicense?.brokerServer || 'ICMarketsSC-Live04');
   const [testSymbol, setTestSymbol] = useState('XAUUSD');
-  const [testEaVersion, setTestEaVersion] = useState('2.4.0');
+  const [testEaVersion, setTestEaVersion] = useState('2.4.1');
   const [simulateReplay, setSimulateReplay] = useState(false);
   const [simulateTimeDrift, setSimulateTimeDrift] = useState(false);
 
@@ -41,9 +61,9 @@ export const EASimulator: React.FC = () => {
   const [lastResponse, setLastResponse] = useState<any>(null);
   const [copiedResponse, setCopiedResponse] = useState(false);
   const [terminalLogs, setTerminalLogs] = useState<string[]>([
-    '2026.09.09 13:30:00.012 OPHIREUM Expert Assistant (XAUUSD, M15): [CORE] Initializing institutional algorithmic engine...',
-    '2026.09.09 13:30:00.045 OPHIREUM Expert Assistant: [CONFIG] Timeframe: M15. Target Symbol: XAUUSD (Gold).',
-    '2026.09.09 13:30:00.080 OPHIREUM Expert Assistant: [NET] Preparing WebRequest cryptographic handshake...'
+    '2026.09.10 09:00:00.012 OPHIREUM Expert Assistant (XAUUSD, M15): [CORE] Initializing institutional algorithmic engine...',
+    '2026.09.10 09:00:00.045 OPHIREUM Expert Assistant: [CONFIG] Timeframe: M15. Target Symbol: XAUUSD (Gold).',
+    '2026.09.10 09:00:00.080 OPHIREUM Expert Assistant: [NET] Preparing WebRequest cryptographic handshake...'
   ]);
 
   const runHandshakeSimulation = () => {
@@ -54,296 +74,246 @@ export const EASimulator: React.FC = () => {
     
     setTerminalLogs(prev => [
       ...prev,
-      `${logPrefix} OPHIREUM Expert Assistant: [SEND] Dispatching WebRequest to ${settings.webrequestUrl}/api/v1/ea/validate...`,
+      `${logPrefix} OPHIREUM Expert Assistant: [SEND] Dispatching WebRequest to ${settings.webrequestUrl}...`,
       `${logPrefix} OPHIREUM Expert Assistant: [PAYLOAD] Nonce: ${nonce.substring(0, 14)}... Symbol: ${testSymbol} Account: #${testAccountNumber}`
     ]);
 
-    const result = validateEA({
-      license_id: testLicenseId,
-      account_number: testAccountNumber,
-      broker_name: testBroker,
-      broker_server: testServer,
+    // Local in-memory validation strictly isolated from live database writes
+    const payload = {
+      licenseId: testLicenseId,
+      accountNumber: testAccountNumber,
+      broker: testBroker,
+      server: testServer,
       symbol: testSymbol,
-      ea_version: testEaVersion,
-      nonce: nonce,
-      timestamp: timestamp,
-      signature: 'hmac-sha256-demo-sig'
-    });
+      eaVersion: testEaVersion,
+      nonce,
+      timestamp
+    };
 
-    setLastResponse(result);
+    const res = validateEA(payload);
+    setLastResponse(res);
 
-    setTimeout(() => {
-      const respPrefix = new Date().toISOString().replace('T', ' ').substring(0, 23);
-      if (result.status === 200) {
-        setTerminalLogs(prev => [
-          ...prev,
-          `${respPrefix} OPHIREUM Expert Assistant: [AUTH OK] HTTP 200: Authorization Granted. Status: ACTIVE.`,
-          `${respPrefix} OPHIREUM Expert Assistant: [POLICY] Max Lot: 0.0100 | Hard Stop-Loss: ENFORCED | Heartbeat: 60s`,
-          `${respPrefix} OPHIREUM Expert Assistant: [EXEC] Trading engine engaged for London/NY session overlap.`
-        ]);
-      } else {
-        setTerminalLogs(prev => [
-          ...prev,
-          `${respPrefix} OPHIREUM Expert Assistant: [AUTH DENIED] HTTP ${result.status}: ${result.body.message}`,
-          `${respPrefix} OPHIREUM Expert Assistant: [SAFETY] Execution inhibited. Order dispatch halted.`
-        ]);
-      }
-    }, 250);
+    const resultPrefix = new Date().toISOString().replace('T', ' ').substring(0, 23);
+    if (res.authorized) {
+      setTerminalLogs(prev => [
+        ...prev,
+        `${resultPrefix} OPHIREUM Expert Assistant: [AUTH_SUCCESS] HTTP 200 AUTHORIZED. Cryptographic signature verified.`,
+        `${resultPrefix} OPHIREUM Expert Assistant: [POLICY] Max Lot: ${res.permittedPolicy?.maxLot}. Risk: ${res.permittedPolicy?.riskPct}%. Execution loop ENGAGED on XAUUSD.`
+      ]);
+      addToast('Handshake Approved', 'EA WebRequest simulation succeeded with AUTHORIZED policy.', 'success');
+    } else {
+      setTerminalLogs(prev => [
+        ...prev,
+        `${resultPrefix} OPHIREUM Expert Assistant: [AUTH_FAILED] HTTP ${res.status} ${res.reasonCode}: ${res.message}`,
+        `${resultPrefix} OPHIREUM Expert Assistant: [HALT] Algorithmic execution locked. Terminal uninitialization scheduled.`
+      ]);
+      addToast('Handshake Rejected', `Simulation blocked: ${res.reasonCode}`, 'warning');
+    }
   };
 
-  const copyResponseJson = () => {
+  const clearLogs = () => {
+    setTerminalLogs([
+      `${new Date().toISOString().replace('T', ' ').substring(0, 23)} Terminal log reset by compliance operator.`
+    ]);
+    setLastResponse(null);
+  };
+
+  const copyResponse = () => {
+    if (!lastResponse) return;
     navigator.clipboard.writeText(JSON.stringify(lastResponse, null, 2));
     setCopiedResponse(true);
     setTimeout(() => setCopiedResponse(false), 2000);
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-      {/* Simulator Header */}
-      <div className="border-b border-[#1E2330] pb-6">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#141924] border border-[#C9A227]/30 text-[#E4C765] text-xs font-semibold">
-          <Terminal className="w-3.5 h-3.5" />
-          <span>Interactive Protocol Testing Environment</span>
+    <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+      {/* Isolation Warning Banner */}
+      <div className="p-3.5 rounded-xl bg-[#141824] border border-[#2B354C] text-xs flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-[#E4C765]">
+          <Shield className="w-4 h-4 shrink-0" />
+          <span className="font-mono font-bold">ISOLATED STAGING EA SIMULATOR</span>
+          <span className="text-zinc-400 font-sans hidden sm:inline">— Validations are sandboxed and do not alter production database state.</span>
         </div>
-        <h1 className="text-2xl sm:text-4xl font-display font-bold text-white mt-2">
-          MT5 WebRequest & Validation Simulator
-        </h1>
-        <p className="text-xs sm:text-sm text-zinc-400 mt-1 max-w-3xl leading-relaxed">
-          Test real-time cryptographic authorization handshakes between the MetaTrader 5 terminal and the OPHIREUM Cloud Run API. Inspect nonce replay resistance, symbol constraints, timestamp drift verification, and emergency pauses.
+        <span className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-400 font-mono text-[10px]">
+          SANDBOX MODE
+        </span>
+      </div>
+
+      <div className="border-b border-[#2B354C] pb-6">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="px-2.5 py-0.5 rounded-full bg-[#1C1708] border border-[#C9A227]/40 text-[#E4C765] font-mono text-[10px] tracking-wider uppercase">
+            Protocol Inspector
+          </span>
+          <span className="text-zinc-500 text-xs font-mono">• MQL5 OnInit() Test Bench</span>
+        </div>
+        <h1 className="text-2xl font-bold text-white font-display">MetaTrader 5 EA Sandbox & Validation Simulator</h1>
+        <p className="text-xs text-zinc-400 mt-1 max-w-3xl">
+          Test WebRequest handshakes, replay rejection algorithms, timestamp drift barriers, and symbol validation logic exactly as processed by the compiled EX5 Expert Assistant.
         </p>
       </div>
 
-      {/* Main Grid: Controls vs Terminal Output */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left Column: Simulated MT5 Terminal Controls (5 cols) */}
-        <div className="lg:col-span-5 space-y-6">
-          <div className="p-6 rounded-2xl bg-[#0D1017] border border-[#1E2330] space-y-5 text-xs">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <span className="font-bold text-white text-sm flex items-center gap-2">
-                <Cpu className="w-4 h-4 text-[#C9A227]" />
-                Terminal Execution Parameters
-              </span>
-              <span className="text-[10px] text-zinc-500 font-mono">MQL5 Sandbox</span>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left Column: Form Controls */}
+        <div className="lg:col-span-5 bg-[#0D0F15] border border-[#2B354C] rounded-2xl p-6 space-y-5">
+          <div className="flex items-center justify-between border-b border-[#2B354C] pb-3">
+            <h2 className="text-sm font-bold text-white flex items-center gap-2">
+              <Cpu className="w-4 h-4 text-[#E4C765]" />
+              Terminal Handshake Parameters
+            </h2>
+          </div>
+
+          <div className="space-y-4 text-xs font-mono">
+            <div>
+              <label className="text-zinc-400 block mb-1">Licence Key (License ID):</label>
+              <input
+                type="text"
+                value={testLicenseId}
+                onChange={e => setTestLicenseId(e.target.value)}
+                className="w-full p-2.5 rounded-xl bg-[#141824] border border-[#2B354C] text-white focus:outline-none focus:border-[#C9A227]"
+              />
             </div>
 
-            <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-zinc-400 mb-1">Licence ID Token</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={testLicenseId}
-                    onChange={(e) => setTestLicenseId(e.target.value)}
-                    className="flex-1 bg-[#111420] border border-zinc-800 rounded-lg p-2.5 text-zinc-100 font-mono text-xs outline-none focus:border-[#C9A227]"
-                  />
-                  <button
-                    onClick={() => setTestLicenseId('OPH-INVALID-KEY-999')}
-                    className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded text-[10px] cursor-pointer"
-                    title="Test Invalid Licence"
-                  >
-                    Invalidate
-                  </button>
-                </div>
+                <label className="text-zinc-400 block mb-1">MT5 Account #:</label>
+                <input
+                  type="text"
+                  value={testAccountNumber}
+                  onChange={e => setTestAccountNumber(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-[#141824] border border-[#2B354C] text-white focus:outline-none"
+                />
               </div>
 
               <div>
-                <label className="block text-zinc-400 mb-1">MT5 Account Number</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={testAccountNumber}
-                    onChange={(e) => setTestAccountNumber(e.target.value)}
-                    className="flex-1 bg-[#111420] border border-zinc-800 rounded-lg p-2.5 text-zinc-100 font-mono text-xs outline-none focus:border-[#C9A227]"
-                  />
-                  <button
-                    onClick={() => setTestAccountNumber('9999999')}
-                    className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded text-[10px] cursor-pointer"
-                    title="Test Mismatched Account"
-                  >
-                    Mismatch
-                  </button>
-                </div>
+                <label className="text-zinc-400 block mb-1">Trading Symbol:</label>
+                <input
+                  type="text"
+                  value={testSymbol}
+                  onChange={e => setTestSymbol(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-[#141824] border border-[#2B354C] text-[#E4C765] font-bold focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-zinc-400 block mb-1">Broker Company:</label>
+                <input
+                  type="text"
+                  value={testBroker}
+                  onChange={e => setTestBroker(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-[#141824] border border-[#2B354C] text-white focus:outline-none"
+                />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-zinc-400 mb-1">Broker Name</label>
-                  <input
-                    type="text"
-                    value={testBroker}
-                    onChange={(e) => setTestBroker(e.target.value)}
-                    className="w-full bg-[#111420] border border-zinc-800 rounded-lg p-2.5 text-zinc-100 text-xs outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-zinc-400 mb-1">Broker Server</label>
-                  <input
-                    type="text"
-                    value={testServer}
-                    onChange={(e) => setTestServer(e.target.value)}
-                    className="w-full bg-[#111420] border border-zinc-800 rounded-lg p-2.5 text-zinc-100 text-xs outline-none"
-                  />
-                </div>
+              <div>
+                <label className="text-zinc-400 block mb-1">Broker Server:</label>
+                <input
+                  type="text"
+                  value={testServer}
+                  onChange={e => setTestServer(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-[#141824] border border-[#2B354C] text-white focus:outline-none"
+                />
               </div>
+            </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-zinc-400 mb-1">Symbol</label>
-                  <select
-                    value={testSymbol}
-                    onChange={(e) => setTestSymbol(e.target.value)}
-                    className="w-full bg-[#111420] border border-zinc-800 rounded-lg p-2.5 text-zinc-100 text-xs outline-none"
-                  >
-                    <option value="XAUUSD">XAUUSD (Gold - Allowed)</option>
-                    <option value="EURUSD">EURUSD (Currency - Denied)</option>
-                    <option value="BTCUSD">BTCUSD (Crypto - Denied)</option>
-                  </select>
-                </div>
+            {/* Attack & Drift Simulators */}
+            <div className="p-3 rounded-xl bg-[#141824] border border-[#2B354C] space-y-2">
+              <div className="text-[11px] font-bold text-zinc-300">Security Test Vectors:</div>
+              <label className="flex items-center gap-2 cursor-pointer text-zinc-300">
+                <input
+                  type="checkbox"
+                  checked={simulateReplay}
+                  onChange={e => setSimulateReplay(e.target.checked)}
+                  className="rounded bg-[#0D0F15] border-[#2B354C] text-[#C9A227] focus:ring-0"
+                />
+                <span>Simulate Replay Attack (Send Stale Nonce)</span>
+              </label>
 
-                <div>
-                  <label className="block text-zinc-400 mb-1">EA Version</label>
-                  <input
-                    type="text"
-                    value={testEaVersion}
-                    onChange={(e) => setTestEaVersion(e.target.value)}
-                    className="w-full bg-[#111420] border border-zinc-800 rounded-lg p-2.5 text-zinc-100 text-xs outline-none font-mono"
-                  />
-                </div>
-              </div>
+              <label className="flex items-center gap-2 cursor-pointer text-zinc-300">
+                <input
+                  type="checkbox"
+                  checked={simulateTimeDrift}
+                  onChange={e => setSimulateTimeDrift(e.target.checked)}
+                  className="rounded bg-[#0D0F15] border-[#2B354C] text-[#C9A227] focus:ring-0"
+                />
+                <span>Simulate Clock Drift (400s terminal skew)</span>
+              </label>
+            </div>
 
-              {/* Edge Case Attack Simulations */}
-              <div className="p-3 rounded-xl bg-[#090B10] border border-zinc-800 space-y-2 pt-3">
-                <span className="text-[11px] font-bold text-zinc-300 uppercase tracking-wider block">
-                  Security Defense Vectors:
-                </span>
-                
-                <label className="flex items-center gap-2 cursor-pointer text-[11px] text-zinc-400">
-                  <input
-                    type="checkbox"
-                    checked={simulateReplay}
-                    onChange={(e) => setSimulateReplay(e.target.checked)}
-                    className="rounded bg-zinc-900 border-zinc-700 text-[#C9A227] focus:ring-0"
-                  />
-                  <span>Simulate Nonce Replay Attack (Duplicate Request)</span>
-                </label>
-
-                <label className="flex items-center gap-2 cursor-pointer text-[11px] text-zinc-400">
-                  <input
-                    type="checkbox"
-                    checked={simulateTimeDrift}
-                    onChange={(e) => setSimulateTimeDrift(e.target.checked)}
-                    className="rounded bg-zinc-900 border-zinc-700 text-[#C9A227] focus:ring-0"
-                  />
-                  <span>Simulate Clock Drift Exceeding 300 Seconds</span>
-                </label>
-              </div>
-
+            {/* Action Buttons */}
+            <div className="flex gap-2 pt-2">
               <button
                 onClick={runHandshakeSimulation}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#C9A227] to-[#E4C765] text-black font-bold text-xs shadow-md hover:brightness-110 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="flex-1 py-2.5 rounded-xl bg-[#C9A227] hover:bg-[#E4C765] text-black font-bold text-xs cursor-pointer transition-colors inline-flex items-center justify-center gap-2"
               >
-                <Play className="w-4 h-4 fill-current" />
-                <span>Transmit WebRequest Handshake</span>
+                <Play className="w-3.5 h-3.5" />
+                Execute WebRequest Handshake
+              </button>
+
+              <button
+                onClick={clearLogs}
+                className="px-3 py-2.5 rounded-xl bg-[#1A1F2C] hover:bg-[#252C3D] border border-[#2B354C] text-zinc-400 hover:text-white cursor-pointer"
+                title="Reset Console"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
         </div>
 
-        {/* Right Column: Terminal Console & Decoded Response (7 cols) */}
+        {/* Right Column: Terminal Stream & Cryptographic Output */}
         <div className="lg:col-span-7 space-y-6">
-          {/* Decoded HTTP Response Badge */}
-          {lastResponse && (
-            <div className={`p-4 rounded-xl border flex items-center justify-between text-xs animate-in fade-in ${
-              lastResponse.status === 200
-                ? 'bg-emerald-950/40 border-emerald-700/60 text-emerald-300'
-                : 'bg-rose-950/40 border-rose-700/60 text-rose-300'
-            }`}>
-              <div className="flex items-center gap-3">
-                {lastResponse.status === 200 ? (
-                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                ) : (
-                  <XCircle className="w-5 h-5 text-rose-400" />
-                )}
-                <div>
-                  <div className="font-bold">
-                    HTTP Response {lastResponse.status}: {lastResponse.body.status || 'ERROR'}
-                  </div>
-                  <div className="text-[11px] opacity-90">{lastResponse.body.message}</div>
-                </div>
+          {/* MT5 Terminal Log Viewer */}
+          <div className="bg-[#0D0F15] border border-[#2B354C] rounded-2xl overflow-hidden shadow-2xl">
+            <div className="p-3 bg-[#111420] border-b border-[#2B354C] flex items-center justify-between text-xs font-mono">
+              <div className="flex items-center gap-2 text-zinc-300">
+                <Terminal className="w-4 h-4 text-[#E4C765]" />
+                <span>MetaTrader 5 Experts Journal Simulation</span>
               </div>
-
-              <button
-                onClick={copyResponseJson}
-                className="px-2.5 py-1 bg-black/40 hover:bg-black/60 rounded text-[11px] flex items-center gap-1 cursor-pointer"
-              >
-                {copiedResponse ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                <span>{copiedResponse ? 'Copied' : 'JSON'}</span>
-              </button>
-            </div>
-          )}
-
-          {/* MT5 Terminal Experts Log Output */}
-          <div className="rounded-2xl bg-[#08090D] border border-[#1A1F2C] overflow-hidden shadow-2xl">
-            <div className="px-4 py-2.5 bg-[#0F131D] border-b border-zinc-800 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80"></span>
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
-                <span className="ml-2 font-mono text-[11px] text-zinc-400 font-semibold">
-                  MT5 Terminal Experts Log • XAUUSD M15
-                </span>
-              </div>
-              <button
-                onClick={() => setTerminalLogs([])}
-                className="text-[10px] text-zinc-500 hover:text-zinc-300"
-              >
-                Clear Log
-              </button>
+              <span className="text-[10px] text-zinc-500">Auto-Scroll Active</span>
             </div>
 
-            <div className="p-4 font-mono text-[11px] leading-relaxed space-y-1.5 h-72 overflow-y-auto text-zinc-300">
-              {terminalLogs.map((log, index) => (
-                <div key={index} className="break-all">
-                  {log.includes('[AUTH OK]') ? (
-                    <span className="text-emerald-400 font-semibold">{log}</span>
-                  ) : log.includes('[AUTH DENIED]') ? (
-                    <span className="text-rose-400 font-semibold">{log}</span>
-                  ) : log.includes('[POLICY]') ? (
-                    <span className="text-[#E4C765]">{log}</span>
-                  ) : (
-                    <span>{log}</span>
-                  )}
+            <div className="p-4 bg-[#08090C] font-mono text-[11px] text-zinc-300 space-y-1.5 h-[340px] overflow-y-auto leading-relaxed">
+              {terminalLogs.map((log, i) => (
+                <div key={i} className="flex gap-2">
+                  <span className="text-zinc-500 shrink-0">{log.substring(0, 23)}</span>
+                  <span className={
+                    log.includes('AUTH_SUCCESS')
+                      ? 'text-emerald-400 font-bold'
+                      : log.includes('AUTH_FAILED')
+                      ? 'text-rose-400 font-bold'
+                      : log.includes('SEND')
+                      ? 'text-amber-300'
+                      : 'text-zinc-300'
+                  }>
+                    {log.substring(24)}
+                  </span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Decoded Cloud Policy Display */}
-          {lastResponse?.body?.policy && (
-            <div className="p-5 rounded-2xl bg-[#0D1017] border border-[#1E2330] space-y-3 text-xs">
-              <h4 className="font-bold text-white flex items-center gap-2">
-                <Shield className="w-4 h-4 text-[#C9A227]" />
-                Injected Policy Parameters
-              </h4>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="p-3 bg-[#111420] rounded-lg border border-zinc-800">
-                  <span className="text-zinc-500 block text-[10px]">Execution Permitted:</span>
-                  <span className="font-bold text-emerald-400">TRUE</span>
-                </div>
-                <div className="p-3 bg-[#111420] rounded-lg border border-zinc-800">
-                  <span className="text-zinc-500 block text-[10px]">Max Lot Setting:</span>
-                  <span className="font-mono text-zinc-100 font-bold">{lastResponse.body.policy.lot_setting}</span>
-                </div>
-                <div className="p-3 bg-[#111420] rounded-lg border border-zinc-800">
-                  <span className="text-zinc-500 block text-[10px]">Stop-Loss Mandate:</span>
-                  <span className="font-bold text-emerald-400">REQUIRED</span>
-                </div>
-                <div className="p-3 bg-[#111420] rounded-lg border border-zinc-800">
-                  <span className="text-zinc-500 block text-[10px]">Heartbeat Interval:</span>
-                  <span className="font-mono text-zinc-100 font-bold">{lastResponse.body.policy.heartbeat_interval_sec}s</span>
-                </div>
+          {/* Cryptographic JSON Response */}
+          {lastResponse && (
+            <div className="bg-[#0D0F15] border border-[#2B354C] rounded-2xl p-4 space-y-3 font-mono text-xs">
+              <div className="flex items-center justify-between border-b border-[#2B354C] pb-2">
+                <span className="text-zinc-400 flex items-center gap-1.5">
+                  <Activity className="w-3.5 h-3.5 text-[#E4C765]" />
+                  Server Ingress Raw JSON Payload
+                </span>
+                <button
+                  onClick={copyResponse}
+                  className="text-zinc-400 hover:text-white flex items-center gap-1 cursor-pointer"
+                >
+                  {copiedResponse ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedResponse ? 'Copied' : 'Copy JSON'}</span>
+                </button>
               </div>
+
+              <pre className="p-3 bg-[#08090C] rounded-xl text-zinc-300 overflow-x-auto text-[11px] leading-relaxed max-h-56">
+                {JSON.stringify(lastResponse, null, 2)}
+              </pre>
             </div>
           )}
         </div>

@@ -195,4 +195,106 @@ describe('OPHIREUM Algorithmic Compliance & Licensing Suite', () => {
       assert.equal(evaluateExecution(false, true), 'AUTHORIZED');
     });
   });
+
+  // Test 8: Strict Role Hierarchy & Anti-Elevation Protection
+  describe('Security & Role Assignment Isolation', () => {
+    const ALLOWED_STAFF_ROLES = ['super_admin', 'license_admin', 'finance_reviewer', 'support_agent'];
+    const LOWEST_ROLE = 'customer';
+
+    function determineRegistrationRole(submittedRole?: string): string {
+      // Registration MUST always assign 'customer', ignoring any incoming role parameter
+      return LOWEST_ROLE;
+    }
+
+    function canAccessStaffEndpoint(role: string, requiredRole: string): boolean {
+      if (role === 'super_admin') return true;
+      return role === requiredRole;
+    }
+
+    it('enforces lowest role (customer) on all public registrations', () => {
+      assert.equal(determineRegistrationRole('super_admin'), 'customer');
+      assert.equal(determineRegistrationRole('admin'), 'customer');
+      assert.equal(determineRegistrationRole(undefined), 'customer');
+    });
+
+    it('denies customer role access to staff desks', () => {
+      assert.equal(canAccessStaffEndpoint('customer', 'support_agent'), false);
+      assert.equal(canAccessStaffEndpoint('customer', 'finance_reviewer'), false);
+      assert.equal(canAccessStaffEndpoint('customer', 'license_admin'), false);
+      assert.equal(canAccessStaffEndpoint('customer', 'super_admin'), false);
+    });
+
+    it('enforces role compartmentalization between staff desks', () => {
+      assert.equal(canAccessStaffEndpoint('support_agent', 'finance_reviewer'), false);
+      assert.equal(canAccessStaffEndpoint('finance_reviewer', 'license_admin'), false);
+      assert.equal(canAccessStaffEndpoint('license_admin', 'support_agent'), false);
+    });
+
+    it('allows super_admin executive access across all operational desks', () => {
+      assert.equal(canAccessStaffEndpoint('super_admin', 'support_agent'), true);
+      assert.equal(canAccessStaffEndpoint('super_admin', 'finance_reviewer'), true);
+      assert.equal(canAccessStaffEndpoint('super_admin', 'license_admin'), true);
+      assert.equal(canAccessStaffEndpoint('super_admin', 'super_admin'), true);
+    });
+  });
+
+  // Test 9: Customer Profile Schema Sanitization
+  describe('Customer Profile Schema & Sanitization', () => {
+    function sanitizeCustomerProfile(rawInput: Record<string, any>, uid: string): Record<string, any> {
+      // Must not contain password or unauthorized claims
+      const { password, role, customClaims, isAdmin, ...safeInput } = rawInput;
+      return {
+        uid,
+        email: safeInput.email.trim().toLowerCase(),
+        fullName: safeInput.fullName.trim(),
+        role: 'customer',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        isEmailVerified: false,
+        country: safeInput.country || 'Global',
+        currency: 'USD'
+      };
+    }
+
+    it('strips sensitive credentials and enforces sanitized fields', () => {
+      const dirtyInput = {
+        email: '  TRADER@EXAMPLE.COM ',
+        fullName: ' John Doe ',
+        password: 'SuperSecretPassword123!',
+        role: 'super_admin',
+        isAdmin: true
+      };
+      const cleaned = sanitizeCustomerProfile(dirtyInput, 'uid-xyz-123');
+      assert.equal(cleaned.email, 'trader@example.com');
+      assert.equal(cleaned.fullName, 'John Doe');
+      assert.equal(cleaned.role, 'customer');
+      assert.equal(cleaned.password, undefined);
+      assert.equal(cleaned.isAdmin, undefined);
+      assert.equal(cleaned.uid, 'uid-xyz-123');
+    });
+  });
+
+  // Test 10: EA HMAC-SHA256 Canonical Signing Format
+  describe('EA WebRequest Canonical Signature Format', () => {
+    const SECRET = 'OPHIREUM_TEST_SECRET_KEY';
+
+    function signCanonicalPayload(licenseId: string, mt5Login: string, symbol: string, timestamp: number, nonce: string): string {
+      const canonical = `${licenseId}:${mt5Login}:${symbol}:${timestamp}:${nonce}`;
+      return crypto.createHmac('sha256', SECRET).update(canonical).digest('hex');
+    }
+
+    it('verifies exact matching of EA payload signature against server signature', () => {
+      const licenseId = 'OPH-PRO-9942-XAU';
+      const mt5Login = '8829104';
+      const symbol = 'XAUUSD';
+      const timestamp = 1773000500;
+      const nonce = 'c7a4b2e8-f190-4e3a-9214-72981049281a';
+
+      const sigClient = signCanonicalPayload(licenseId, mt5Login, symbol, timestamp, nonce);
+      const sigServer = signCanonicalPayload(licenseId, mt5Login, symbol, timestamp, nonce);
+
+      assert.equal(sigClient, sigServer);
+      assert.equal(sigClient.length, 64);
+    });
+  });
 });

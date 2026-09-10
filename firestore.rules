@@ -11,58 +11,69 @@ service cloud.firestore {
       return isAuth() && request.auth.uid == userId;
     }
 
+    function isEmailVerified() {
+      return isAuth() && (
+        request.auth.token.email_verified == true ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isEmailVerified == true)
+      );
+    }
+
+    // Role detection: Priority 1: Auth Custom Claim. Priority 2: Firestore Document
     function getUserRole() {
       return isAuth() && exists(/databases/$(database)/documents/users/$(request.auth.uid))
         ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
         : 'visitor';
     }
 
-    function isSuperAdmin() {
+    function hasRole(targetRole) {
       return isAuth() && (
-        request.auth.token.role == 'super_admin' || 
-        getUserRole() == 'super_admin' ||
-        request.auth.token.email == 'dhenzecapital@gmail.com'
+        request.auth.token.role == targetRole ||
+        getUserRole() == targetRole
       );
+    }
+
+    function isSuperAdmin() {
+      return hasRole('super_admin');
     }
 
     function isLicenseAdmin() {
-      return isAuth() && (
-        isSuperAdmin() || 
-        request.auth.token.role == 'license_admin' || 
-        getUserRole() == 'license_admin'
-      );
+      return isSuperAdmin() || hasRole('license_admin');
     }
 
     function isFinance() {
-      return isAuth() && (
-        isSuperAdmin() || 
-        request.auth.token.role == 'finance_reviewer' || 
-        getUserRole() == 'finance_reviewer'
-      );
+      return isSuperAdmin() || hasRole('finance_reviewer');
+    }
+
+    function isSupport() {
+      return isSuperAdmin() || hasRole('support_agent');
     }
 
     function isStaff() {
-      return isAuth() && (
-        isSuperAdmin() || 
-        isLicenseAdmin() || 
-        isFinance() || 
-        request.auth.token.role == 'support_agent' || 
-        getUserRole() == 'support_agent'
-      );
+      return isSuperAdmin() || isLicenseAdmin() || isFinance() || isSupport();
     }
 
     // 1. Users Collection
+    // Customers can never elevate their own role or spoof email verification status
     match /users/{userId} {
       allow read: if isOwner(userId) || isStaff();
-      allow create: if isOwner(userId) && request.resource.data.role == 'customer';
-      allow update: if (isOwner(userId) && request.resource.data.role == resource.data.role) || isSuperAdmin();
+      allow create: if isOwner(userId) && 
+        request.resource.data.role == 'customer' &&
+        (!('isEmailVerified' in request.resource.data) || request.resource.data.isEmailVerified == request.auth.token.email_verified);
+      allow update: if isSuperAdmin() || (
+        isOwner(userId) && 
+        request.resource.data.role == resource.data.role &&
+        (!('role' in request.resource.data.diff(resource.data).affectedKeys())) &&
+        (!('isEmailVerified' in request.resource.data.diff(resource.data).affectedKeys()))
+      );
       allow delete: if isSuperAdmin();
     }
 
     // 2. Profiles Collection
     match /profiles/{userId} {
       allow read: if isOwner(userId) || isStaff();
-      allow write: if isOwner(userId) || isSuperAdmin();
+      allow create, update: if isOwner(userId) || isSuperAdmin();
+      allow delete: if isSuperAdmin();
     }
 
     // 3. Plans Collection (Public Read, Super Admin Write)
@@ -71,51 +82,66 @@ service cloud.firestore {
       allow write: if isSuperAdmin();
     }
 
-    // 4. Orders & Payments Collection
+    // 4. Orders Collection
     match /orders/{orderId} {
       allow read: if (isAuth() && resource.data.userId == request.auth.uid) || isFinance();
-      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+      allow create: if isAuth() && 
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.status == 'pending';
       allow update: if isFinance() || (
         isAuth() && 
         resource.data.userId == request.auth.uid && 
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['txHash', 'status', 'updatedAt'])
+        (resource.data.status == 'pending' || resource.data.status == 'under_review') &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['txHash', 'status', 'depositAddress', 'updatedAt']) &&
+        (request.resource.data.status == 'pending' || request.resource.data.status == 'under_review')
       );
       allow delete: if isSuperAdmin();
     }
 
+    // 5. Payments Collection
     match /payments/{paymentId} {
       allow read: if (isAuth() && resource.data.userId == request.auth.uid) || isFinance();
       allow write: if isFinance();
     }
 
-    // 5. Licenses Collection
+    // 6. Licenses Collection
+    // Customers cannot create licences, change validity/status, or issue to themselves.
     match /licenses/{licenseId} {
       allow read: if (isAuth() && resource.data.userId == request.auth.uid) || isLicenseAdmin();
       allow create: if isLicenseAdmin() || isFinance();
       allow update: if isLicenseAdmin() || (
         isAuth() && 
         resource.data.userId == request.auth.uid && 
-        (resource.data.status == 'ready_for_binding' || resource.data.status == 'unbinding_requested') &&
+        resource.data.status == 'ready_for_binding' &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'boundMt5Account', 'brokerName', 'brokerServer', 'accountType', 'status', 'boundAt', 'updatedAt'
-        ])
+        ]) &&
+        request.resource.data.status == 'active' &&
+        request.resource.data.userId == resource.data.userId &&
+        request.resource.data.expiresAt == resource.data.expiresAt
       );
       allow delete: if isSuperAdmin();
     }
 
-    // 6. MT5 Bindings & Unbinding Requests
+    // 7. MT5 Unbinding Requests
     match /unbinding_requests/{requestId} {
       allow read: if (isAuth() && resource.data.userId == request.auth.uid) || isLicenseAdmin();
-      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+      allow create: if isAuth() && 
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.status == 'pending';
       allow update: if isLicenseAdmin();
       allow delete: if isSuperAdmin();
     }
 
-    // 7. Support Tickets & Messages
+    // 8. Support Tickets & Messages
     match /support_tickets/{ticketId} {
       allow read: if (isAuth() && resource.data.userId == request.auth.uid) || isStaff();
       allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
-      allow update: if (isAuth() && resource.data.userId == request.auth.uid) || isStaff();
+      allow update: if isStaff() || (
+        isAuth() && 
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['updatedAt', 'responses', 'customerLastSeen'])
+      );
       allow delete: if isSuperAdmin();
 
       match /messages/{messageId} {
@@ -124,25 +150,25 @@ service cloud.firestore {
       }
     }
 
-    // 8. Invoices
+    // 9. Invoices
     match /invoices/{invoiceId} {
       allow read: if (isAuth() && resource.data.userId == request.auth.uid) || isFinance();
       allow write: if isFinance();
     }
 
-    // 9. VPS Instances
+    // 10. VPS Instances
     match /vps_instances/{vpsId} {
       allow read: if (isAuth() && resource.data.userId == request.auth.uid) || isStaff();
       allow write: if isLicenseAdmin();
     }
 
-    // 10. EA Versions & Builds
+    // 11. EA Versions & Builds
     match /ea_versions/{versionId} {
       allow read: if isAuth();
       allow write: if isSuperAdmin();
     }
 
-    // 11. System Settings & Whitelists
+    // 12. System Settings & Whitelists
     match /system_settings/{settingId} {
       allow read: if true;
       allow write: if isSuperAdmin();
@@ -153,28 +179,27 @@ service cloud.firestore {
       allow write: if isSuperAdmin();
     }
 
-    // 12. Automation Controls
+    // 13. Automation Controls
     match /automation_controls/{controlId} {
       allow read: if isLicenseAdmin();
       allow write: if isLicenseAdmin();
     }
 
-    // 13. Notifications
+    // 14. Notifications
     match /notifications/{notifId} {
       allow read: if isAuth() && (resource.data.userId == request.auth.uid || resource.data.userId == 'ALL');
       allow update: if isAuth() && resource.data.userId == request.auth.uid;
-      allow create: if isStaff();
-      allow delete: if isStaff();
+      allow create, delete: if isStaff();
     }
 
-    // 14. Audit Logs (Append-only by authenticated users, immutable, read-only for Super Admin)
+    // 15. Audit Logs (Append-only, strictly immutable, Super Admin read-only)
     match /audit_logs/{logId} {
       allow read: if isSuperAdmin();
       allow create: if isAuth();
       allow update, delete: if false; // Strict immutability
     }
 
-    // 15. Heartbeats & Validations
+    // 16. Heartbeats & Telemetry
     match /heartbeats/{hbId} {
       allow read: if isLicenseAdmin();
       allow write: if isAuth();
@@ -185,7 +210,7 @@ service cloud.firestore {
       allow write: if isAuth();
     }
 
-    // Default deny all other unspecified paths
+    // Default Deny
     match /{document=**} {
       allow read, write: if false;
     }

@@ -1,11 +1,11 @@
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
- * OPHIREUM Master Application Entry Point with HashRouter & Protected Routing
+ * OPHIREUM Master Application Entry Point with HashRouter & Strict RBAC Route Guards
  */
 
-import React, { Suspense, lazy } from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React from 'react';
+import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { Header } from './components/layout/Header';
@@ -18,9 +18,14 @@ import { LegalCenter } from './components/public/LegalCenter';
 import { AuthPages } from './components/public/AuthPages';
 import { CustomerPortal } from './components/customer/CustomerPortal';
 import { AdminPortal } from './components/admin/AdminPortal';
+import { SupportDashboard } from './components/staff/SupportDashboard';
+import { FinanceDashboard } from './components/staff/FinanceDashboard';
+import { LicenseDashboard } from './components/staff/LicenseDashboard';
 import { EASimulator } from './components/ea/EASimulator';
 import { NotFoundPage } from './components/common/NotFoundPage';
-import { AlertTriangle, CheckCircle2, Info, X, Shield } from 'lucide-react';
+import { AccessDeniedPage } from './components/common/AccessDeniedPage';
+import { AlertTriangle, CheckCircle2, Info, X } from 'lucide-react';
+import { auth } from './lib/firebase';
 
 const ToastContainer: React.FC = () => {
   const { toasts, removeToast } = useApp();
@@ -64,23 +69,130 @@ const ToastContainer: React.FC = () => {
   );
 };
 
-// Protected Route Guard for Customers
-const ProtectedCustomerRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+// Route Guard: Guest Only (Redirects authenticated users to their natural portal)
+const GuestOnlyRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentUser, currentRole } = useApp();
 
-  if (currentRole === 'visitor' || !currentUser?.uid) {
-    return <Navigate to="/login?redirect=/dashboard" replace />;
+  if (currentUser && currentRole !== 'visitor') {
+    switch (currentRole) {
+      case 'super_admin':
+        return <Navigate to="/admin" replace />;
+      case 'license_admin':
+        return <Navigate to="/license-dashboard" replace />;
+      case 'finance_reviewer':
+        return <Navigate to="/finance-dashboard" replace />;
+      case 'support_agent':
+        return <Navigate to="/support-dashboard" replace />;
+      default:
+        return <Navigate to="/dashboard" replace />;
+    }
   }
 
   return <>{children}</>;
 };
 
-// Protected Route Guard for Staff/Admins
-const ProtectedAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { currentRole } = useApp();
+// Route Guard: Verified Customer Only
+const VerifiedCustomerRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { currentUser, currentRole } = useApp();
+  const location = useLocation();
 
-  if (currentRole === 'visitor' || currentRole === 'customer') {
+  if (currentRole === 'visitor' || !currentUser?.uid) {
+    return <Navigate to={`/login?redirect=${encodeURIComponent(location.pathname)}`} replace />;
+  }
+
+  // Staff members can view customer perspective
+  if (['support_agent', 'finance_reviewer', 'license_admin', 'super_admin'].includes(currentRole)) {
+    return <>{children}</>;
+  }
+
+  // Authoritative email verification enforcement
+  const isVerified = auth.currentUser ? auth.currentUser.emailVerified : Boolean(currentUser?.isEmailVerified);
+  if (!isVerified) {
+    return <Navigate to="/verify-email" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+// Route Guard: Support Agent or Super Admin
+const SupportRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { currentUser, currentRole } = useApp();
+
+  if (currentRole === 'visitor' || !currentUser?.uid) {
+    return <Navigate to="/login?redirect=/support-dashboard" replace />;
+  }
+
+  if (currentRole !== 'support_agent' && currentRole !== 'super_admin') {
+    return (
+      <AccessDeniedPage
+        requiredRole="support_agent or super_admin"
+        currentRole={currentRole}
+        reason="Your profile does not possess support desk authority."
+      />
+    );
+  }
+
+  return <>{children}</>;
+};
+
+// Route Guard: Finance Reviewer or Super Admin
+const FinanceRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { currentUser, currentRole } = useApp();
+
+  if (currentRole === 'visitor' || !currentUser?.uid) {
+    return <Navigate to="/login?redirect=/finance-dashboard" replace />;
+  }
+
+  if (currentRole !== 'finance_reviewer' && currentRole !== 'super_admin') {
+    return (
+      <AccessDeniedPage
+        requiredRole="finance_reviewer or super_admin"
+        currentRole={currentRole}
+        reason="Your profile does not possess financial settlement authority."
+      />
+    );
+  }
+
+  return <>{children}</>;
+};
+
+// Route Guard: Licence Administrator or Super Admin
+const LicenseAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { currentUser, currentRole } = useApp();
+
+  if (currentRole === 'visitor' || !currentUser?.uid) {
+    return <Navigate to="/login?redirect=/license-dashboard" replace />;
+  }
+
+  if (currentRole !== 'license_admin' && currentRole !== 'super_admin') {
+    return (
+      <AccessDeniedPage
+        requiredRole="license_admin or super_admin"
+        currentRole={currentRole}
+        reason="Your profile does not possess MT5 terminal lifecycle and unbinding authority."
+      />
+    );
+  }
+
+  return <>{children}</>;
+};
+
+// Route Guard: Super Admin Only
+const SuperAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { currentUser, currentRole } = useApp();
+
+  if (currentRole === 'visitor' || !currentUser?.uid) {
     return <Navigate to="/login?redirect=/admin" replace />;
+  }
+
+  if (currentRole !== 'super_admin') {
+    return (
+      <AccessDeniedPage
+        requiredRole="super_admin"
+        currentRole={currentRole}
+        reason="Your profile does not possess Root Executive Administration privileges."
+      />
+    );
   }
 
   return <>{children}</>;
@@ -110,7 +222,7 @@ const AppContent: React.FC = () => {
           <Route path="/home" element={<Navigate to="/" replace />} />
           <Route path="/pricing" element={<HomePage />} />
 
-          {/* EA Sandbox Simulator */}
+          {/* EA Sandbox Simulator (Restricted to Staging or Staff) */}
           <Route path="/ea-simulator" element={<EASimulator />} />
 
           {/* Product Architecture Pages */}
@@ -154,30 +266,157 @@ const AppContent: React.FC = () => {
           <Route path="/acceptable-use" element={<LegalCenter document="legal-acceptable-use" />} />
           <Route path="/disclaimer" element={<LegalCenter document="disclaimer" />} />
 
-          {/* Authentication & Verification */}
-          <Route path="/login" element={<AuthPages view="login" />} />
-          <Route path="/register" element={<AuthPages view="register" />} />
-          <Route path="/forgot-password" element={<AuthPages view="forgot-password" />} />
+          {/* Authentication & Verification (Guest Only) */}
+          <Route
+            path="/login"
+            element={
+              <GuestOnlyRoute>
+                <AuthPages view="login" />
+              </GuestOnlyRoute>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <GuestOnlyRoute>
+                <AuthPages view="register" />
+              </GuestOnlyRoute>
+            }
+          />
+          <Route
+            path="/forgot-password"
+            element={
+              <GuestOnlyRoute>
+                <AuthPages view="forgot-password" />
+              </GuestOnlyRoute>
+            }
+          />
           <Route path="/verify-email" element={<AuthPages view="verify-email" />} />
 
-          {/* Protected Customer Dashboard */}
+          {/* Customer Portal & Subroutes (Verified Customer Only) */}
           <Route
             path="/dashboard"
             element={
-              <ProtectedCustomerRoute>
-                <CustomerPortal />
-              </ProtectedCustomerRoute>
+              <VerifiedCustomerRoute>
+                <CustomerPortal initialTab="overview" />
+              </VerifiedCustomerRoute>
             }
           />
-          <Route path="/wallet-payments" element={<Navigate to="/dashboard" replace />} />
+          <Route
+            path="/dashboard/license"
+            element={
+              <VerifiedCustomerRoute>
+                <CustomerPortal initialTab="license" />
+              </VerifiedCustomerRoute>
+            }
+          />
+          <Route
+            path="/dashboard/packages"
+            element={
+              <VerifiedCustomerRoute>
+                <CustomerPortal initialTab="packages" />
+              </VerifiedCustomerRoute>
+            }
+          />
+          <Route
+            path="/dashboard/mt5-binding"
+            element={
+              <VerifiedCustomerRoute>
+                <CustomerPortal initialTab="mt5-binding" />
+              </VerifiedCustomerRoute>
+            }
+          />
+          <Route
+            path="/dashboard/vps"
+            element={
+              <VerifiedCustomerRoute>
+                <CustomerPortal initialTab="vps" />
+              </VerifiedCustomerRoute>
+            }
+          />
+          <Route
+            path="/dashboard/downloads"
+            element={
+              <VerifiedCustomerRoute>
+                <CustomerPortal initialTab="downloads" />
+              </VerifiedCustomerRoute>
+            }
+          />
+          <Route
+            path="/dashboard/billing"
+            element={
+              <VerifiedCustomerRoute>
+                <CustomerPortal initialTab="billing" />
+              </VerifiedCustomerRoute>
+            }
+          />
+          <Route
+            path="/dashboard/support"
+            element={
+              <VerifiedCustomerRoute>
+                <CustomerPortal initialTab="support" />
+              </VerifiedCustomerRoute>
+            }
+          />
+          <Route
+            path="/dashboard/legal"
+            element={
+              <VerifiedCustomerRoute>
+                <CustomerPortal initialTab="legal" />
+              </VerifiedCustomerRoute>
+            }
+          />
+          <Route
+            path="/dashboard/profile"
+            element={
+              <VerifiedCustomerRoute>
+                <CustomerPortal initialTab="profile" />
+              </VerifiedCustomerRoute>
+            }
+          />
+          <Route
+            path="/dashboard/security"
+            element={
+              <VerifiedCustomerRoute>
+                <CustomerPortal initialTab="security" />
+              </VerifiedCustomerRoute>
+            }
+          />
+          <Route path="/wallet-payments" element={<Navigate to="/dashboard/billing" replace />} />
 
-          {/* Protected Admin & Operations Console */}
+          {/* Dedicated Staff Desks */}
+          <Route
+            path="/support-dashboard"
+            element={
+              <SupportRoute>
+                <SupportDashboard />
+              </SupportRoute>
+            }
+          />
+          <Route
+            path="/finance-dashboard"
+            element={
+              <FinanceRoute>
+                <FinanceDashboard />
+              </FinanceRoute>
+            }
+          />
+          <Route
+            path="/license-dashboard"
+            element={
+              <LicenseAdminRoute>
+                <LicenseDashboard />
+              </LicenseAdminRoute>
+            }
+          />
+
+          {/* Root Executive Super Administrator Console */}
           <Route
             path="/admin"
             element={
-              <ProtectedAdminRoute>
+              <SuperAdminRoute>
                 <AdminPortal />
-              </ProtectedAdminRoute>
+              </SuperAdminRoute>
             }
           />
           <Route path="/admin-dashboard" element={<Navigate to="/admin" replace />} />

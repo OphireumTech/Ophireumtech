@@ -49,7 +49,8 @@ import {
   COLLECTIONS,
   testFirestoreConnection,
   formatAuthError,
-  serverTimestamp
+  serverTimestamp,
+  EMAIL_ACTION_CODE_SETTINGS
 } from '../lib/firebase';
 import {
   signInWithEmailAndPassword,
@@ -99,6 +100,7 @@ export interface AppContextType {
   acceptAgreements: () => void;
   sendPasswordReset: (email: string) => Promise<boolean>;
   sendVerificationEmail: () => Promise<boolean>;
+  checkVerificationStatus: () => Promise<boolean>;
   acceptEmailVerified: () => Promise<boolean>;
   updateProfileInfo: (info: { phone?: string; country?: string; timezone?: string; fullName?: string }) => Promise<{ success: boolean; error?: string }>;
 
@@ -384,6 +386,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             const raw = snap.data() as UserProfile;
             const profile: UserProfile = {
               ...raw,
+              isEmailVerified: fbUser.emailVerified, // Auth is authoritative
               createdAt: normalizeTimestamp(raw.createdAt),
               updatedAt: normalizeTimestamp(raw.updatedAt)
             };
@@ -449,17 +452,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const fbUser = userCredential.user;
       const userDocRef = doc(db, COLLECTIONS.users, fbUser.uid);
       const snap = await getDoc(userDocRef);
+      let assignedRole: UserRole = 'customer';
       if (snap.exists()) {
         const raw = snap.data() as UserProfile;
+        assignedRole = raw.role || 'customer';
         const profile: UserProfile = {
           ...raw,
+          isEmailVerified: fbUser.emailVerified,
           createdAt: normalizeTimestamp(raw.createdAt),
           updatedAt: normalizeTimestamp(raw.updatedAt)
         };
         setCurrentUser(profile);
-        setCurrentRole(profile.role || 'customer');
+        setCurrentRole(assignedRole);
       } else {
-        const assignedRole: UserRole = cleanEmail === 'dhenzecapital@gmail.com' ? 'super_admin' : 'customer';
+        assignedRole = cleanEmail === 'dhenzecapital@gmail.com' ? 'super_admin' : 'customer';
         const newProfile: UserProfile = {
           uid: fbUser.uid,
           email: cleanEmail,
@@ -480,8 +486,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setCurrentUser(newProfile);
         setCurrentRole(assignedRole);
       }
-      setCurrentRoute('dashboard');
-      addToast('Welcome Back', `Authenticated as ${fbUser.email}`, 'success');
+
+      // Check email verification for customer accounts
+      if (assignedRole === 'customer' && !fbUser.emailVerified) {
+        setCurrentRoute('verify-email');
+        addToast('Verification Pending', `Authenticated as ${fbUser.email}. Please verify your email before accessing the dashboard.`, 'warning');
+      } else {
+        setCurrentRoute('dashboard');
+        addToast('Welcome Back', `Authenticated as ${fbUser.email}`, 'success');
+      }
       recordAudit('USER_LOGIN', 'USER', fbUser.uid, undefined, cleanEmail, 'Firebase authenticated session');
       return true;
     } catch (err: any) {
@@ -558,10 +571,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await setDoc(userDocRef, safeUserData);
       await setDoc(profileDocRef, safeProfileData);
 
+      // Immediately send Firebase verification email using the authenticated user and ActionCodeSettings
+      let emailSent = false;
+      let emailSendError: any = null;
       try {
-        await sendEmailVerification(userCred.user);
-      } catch (emailErr) {
-        console.warn('[OPHIREUM] Email verification notice:', emailErr);
+        await sendEmailVerification(userCred.user, {
+          url: "https://ophireumtech.github.io/Ophireumtech/login",
+          handleCodeInApp: false
+        });
+        emailSent = true;
+      } catch (emailErr: any) {
+        emailSendError = emailErr;
+        console.warn('[OPHIREUM Auth Debug] Initial verification send error code:', emailErr?.code || emailErr?.message || 'unknown');
       }
 
       const clientProfile: UserProfile = {
@@ -579,8 +600,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       setCurrentUser(clientProfile);
       setCurrentRole('customer');
-      setCurrentRoute('dashboard');
-      addToast('Account Created', 'Registration successful. Welcome to OPHIREUM!', 'success');
+      setCurrentRoute('verify-email');
+
+      if (emailSent) {
+        // Requirement 1: Show this message only after sendEmailVerification() succeeds
+        addToast(
+          'Account Created',
+          'Account created. We sent a verification link to your email. Please check your inbox and spam folder.',
+          'success'
+        );
+      } else {
+        // Requirement 2: If account creation succeeds but email sending fails, show actual safe Firebase error
+        const safeError = formatAuthError(emailSendError);
+        addToast(
+          'Email Delivery Notice',
+          `Account created, but verification email could not be sent: ${safeError}. Please click Resend Verification Email below.`,
+          'warning'
+        );
+      }
+
       recordAudit('USER_REGISTERED', 'USER', uid, undefined, cleanEmail, 'Customer registered successfully via Firebase Auth');
       return true;
     } catch (firestoreErr: any) {
@@ -654,46 +692,78 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const sendVerificationEmail = async (): Promise<boolean> => {
-    if (auth.currentUser) {
-      try {
-        await sendEmailVerification(auth.currentUser);
-        addToast('Verification Dispatched', `Confirmation link dispatched to ${auth.currentUser.email}. Check your inbox.`, 'success');
-        return true;
-      } catch (err: any) {
-        addToast('Verification Sent', 'Email verification token dispatched.', 'info');
-        return true;
-      }
+    const user = auth.currentUser;
+    if (!user) {
+      addToast('Authentication Required', 'Please log in to request a verification email.', 'warning');
+      return false;
     }
-    addToast('Verification Sent', `Confirmation email dispatched to ${currentUser.email}.`, 'info');
-    return true;
+
+    try {
+      await sendEmailVerification(user, EMAIL_ACTION_CODE_SETTINGS);
+      addToast(
+        'Verification Dispatched',
+        `A verification link has been sent to ${user.email}. Please check your inbox and spam folder.`,
+        'success'
+      );
+      recordAudit('EMAIL_VERIFICATION_SENT', 'USER', user.uid, undefined, user.email || '', 'Verification email dispatched');
+      return true;
+    } catch (err: any) {
+      const code = err?.code || '';
+      console.warn('[OPHIREUM Auth Debug] Resend verification error code:', code);
+      const safeError = formatAuthError(err);
+      addToast('Verification Request', safeError, 'critical');
+      return false;
+    }
   };
 
-  const acceptEmailVerified = async (): Promise<boolean> => {
-    if (auth.currentUser) {
-      try {
-        await auth.currentUser.reload();
-        if (auth.currentUser.emailVerified) {
-          const updated = { ...currentUser, isEmailVerified: true, updatedAt: new Date().toISOString() };
-          setCurrentUser(updated);
-          await setDoc(doc(db, COLLECTIONS.users, currentUser.uid), { isEmailVerified: true }, { merge: true });
-          addToast('Email Verified', 'Your email address is officially verified in Firebase.', 'success');
-          return true;
-        } else {
-          addToast('Pending Verification', 'Please click the link in your inbox before clicking confirm.', 'warning');
-          return false;
-        }
-      } catch {
-        const updated = { ...currentUser, isEmailVerified: true };
-        setCurrentUser(updated);
-        addToast('Email Verified', 'Email address verified.', 'success');
-        return true;
-      }
-    } else {
-      const updated = { ...currentUser, isEmailVerified: true };
-      setCurrentUser(updated);
-      addToast('Email Verified', 'Email status marked as verified.', 'success');
-      return true;
+  const checkVerificationStatus = async (): Promise<boolean> => {
+    const user = auth.currentUser;
+    if (!user) {
+      addToast('Authentication Required', 'Please log in to check your verification status.', 'warning');
+      return false;
     }
+
+    try {
+      await user.reload();
+      if (user.emailVerified) {
+        // Update the Firestore profile and continue to dashboard
+        try {
+          await setDoc(doc(db, COLLECTIONS.users, user.uid), {
+            isEmailVerified: true,
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        } catch (dbErr) {
+          console.warn('[OPHIREUM] Firestore emailVerified update notice:', dbErr);
+        }
+
+        setCurrentUser(prev => ({
+          ...prev,
+          isEmailVerified: true,
+          updatedAt: new Date().toISOString()
+        }));
+
+        addToast('Email Verified', 'Your email address has been verified. Welcome to OPHIREUM!', 'success');
+        recordAudit('EMAIL_VERIFIED', 'USER', user.uid, 'false', 'true', 'Firebase authoritative verification confirmed');
+        setCurrentRoute('dashboard');
+        return true;
+      } else {
+        // Tell the user that the email is still unverified
+        addToast('Still Unverified', 'Your email address is still unverified. Please check your inbox and spam folder, click the verification link, and try again.', 'warning');
+        return false;
+      }
+    } catch (err: any) {
+      const code = err?.code || '';
+      console.warn('[OPHIREUM Auth Debug] Reload verification error code:', code);
+      const safeError = formatAuthError(err);
+      addToast('Verification Status', safeError, 'critical');
+      return false;
+    }
+  };
+
+  // Requirement 7: Never mark emailVerified: true merely because the user clicked a frontend button.
+  // Delegate strictly to checkVerificationStatus authoritative Firebase Auth check.
+  const acceptEmailVerified = async (): Promise<boolean> => {
+    return checkVerificationStatus();
   };
 
   const updateProfileInfo = async (info: { phone?: string; country?: string; timezone?: string; fullName?: string }) => {
@@ -739,7 +809,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return { success: false, error: 'Authentication required' };
     }
 
-    // 2. Validate Agreements
+    // 2. Email Verification Guard (Requirement 5 & 6)
+    if (currentRole === 'customer') {
+      const isVerified = auth.currentUser ? auth.currentUser.emailVerified : Boolean(currentUser?.isEmailVerified);
+      if (!isVerified) {
+        addToast('Verification Required', 'Please verify your email address before ordering subscriptions or licenses.', 'warning');
+        setCurrentRoute('verify-email');
+        return { success: false, error: 'Email verification required' };
+      }
+    }
+
+    // 3. Validate Agreements
     if (!currentUser.agreementsAccepted) {
       addToast('Compliance Requirement', 'You must review and accept the Risk Disclosure before ordering.', 'warning');
       return { success: false, error: 'Agreements not accepted' };
@@ -814,6 +894,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const submitPaymentProof = (orderId: string, txHash: string) => {
+    // Verification Guard (Requirement 5)
+    if (currentRole === 'customer') {
+      const isVerified = auth.currentUser ? auth.currentUser.emailVerified : Boolean(currentUser?.isEmailVerified);
+      if (!isVerified) {
+        addToast('Verification Required', 'Please verify your email address before submitting payment proof.', 'warning');
+        setCurrentRoute('verify-email');
+        return { success: false, error: 'Email verification required' };
+      }
+    }
+
     const cleanHash = txHash.trim();
     if (!cleanHash || cleanHash.length < 12) {
       addToast('Invalid Hash', 'Please provide a valid blockchain transaction hash or transfer ID.', 'warning');
@@ -950,6 +1040,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     brokerServer: string,
     accountType: string
   ) => {
+    // Verification Guard (Requirement 5)
+    if (currentRole === 'customer') {
+      const isVerified = auth.currentUser ? auth.currentUser.emailVerified : Boolean(currentUser?.isEmailVerified);
+      if (!isVerified) {
+        addToast('Verification Required', 'Please verify your email address before binding an MT5 account.', 'warning');
+        setCurrentRoute('verify-email');
+        return { success: false, error: 'Email verification required' };
+      }
+    }
+
     const cleanLogin = mt5Login.trim();
     if (!cleanLogin || !/^\d{4,12}$/.test(cleanLogin)) {
       addToast('Invalid MT5 Login', 'MT5 Account must consist of 4 to 12 numerical digits.', 'warning');
@@ -998,6 +1098,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const submitUnbindingRequest = (licenseId: string, reason: string, newLogin?: string, newBroker?: string) => {
+    // Verification Guard (Requirement 5)
+    if (currentRole === 'customer') {
+      const isVerified = auth.currentUser ? auth.currentUser.emailVerified : Boolean(currentUser?.isEmailVerified);
+      if (!isVerified) {
+        addToast('Verification Required', 'Please verify your email address before requesting license unbinding.', 'warning');
+        setCurrentRoute('verify-email');
+        return { success: false, error: 'Email verification required' };
+      }
+    }
+
     const license = licenses.find(l => l.id === licenseId);
     if (!license) return { success: false, error: 'Licence not found' };
 
@@ -1519,6 +1629,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         acceptAgreements,
         sendPasswordReset,
         sendVerificationEmail,
+        checkVerificationStatus,
         acceptEmailVerified,
         updateProfileInfo,
         plans,

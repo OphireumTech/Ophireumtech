@@ -103,12 +103,27 @@ export async function testFirestoreConnection(): Promise<boolean> {
 export { serverTimestamp, Timestamp };
 
 /**
+ * Standard ActionCodeSettings for OPHIREUM email verification dispatch.
+ * Directs user to the login route upon clicking email confirmation.
+ */
+export const EMAIL_ACTION_CODE_SETTINGS = {
+  url: 'https://ophireumtech.github.io/Ophireumtech/login',
+  handleCodeInApp: false
+};
+
+/**
  * Safe Firebase Authentication error message formatter.
  * Maps Firebase Auth error codes to user-friendly messages.
  * Never exposes internal configurations, stack traces, API keys, or database IDs.
  */
 export function formatAuthError(error: any): string {
   const code = error?.code || '';
+
+  // Safe development logging: log ONLY the Firebase error code (never passwords, tokens, or customer data)
+  if (code) {
+    console.warn('[OPHIREUM Auth Debug] Error code:', code);
+  }
+
   switch (code) {
     case 'auth/operation-not-allowed':
       return 'Email/password registration is not enabled. Please contact support.';
@@ -122,6 +137,14 @@ export function formatAuthError(error: any): string {
       return 'Network error. Check your connection and try again.';
     case 'auth/too-many-requests':
       return 'Too many attempts. Please wait before trying again.';
+    case 'auth/user-token-expired':
+      return 'Your security session has expired. Please sign in again.';
+    case 'auth/invalid-continue-uri':
+      return 'Invalid continuation link. Please contact support.';
+    case 'auth/unauthorized-continue-uri':
+      return 'The continuation domain is not authorized in Firebase Console. Please verify authorized domains.';
+    case 'auth/missing-continue-uri':
+      return 'A continuation link is missing. Please contact support.';
     case 'auth/user-not-found':
     case 'auth/wrong-password':
     case 'auth/invalid-credential':

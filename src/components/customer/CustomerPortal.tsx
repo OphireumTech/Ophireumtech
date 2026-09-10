@@ -32,7 +32,11 @@ import {
 } from 'lucide-react';
 import { PaymentMethod, TicketCategory, TicketPriority } from '../../types';
 
-export const CustomerPortal: React.FC = () => {
+interface CustomerPortalProps {
+  initialTab?: string;
+}
+
+export const CustomerPortal: React.FC<CustomerPortalProps> = ({ initialTab }) => {
   const {
     currentUser,
     currentRoute,
@@ -62,6 +66,32 @@ export const CustomerPortal: React.FC = () => {
     updateProfileInfo
   } = useApp();
 
+  const getMappedTab = (tab?: string) => {
+    switch (tab) {
+      case 'license':
+        return 'my-license';
+      case 'packages':
+        return 'purchase';
+      case 'mt5-binding':
+        return 'binding';
+      case 'vps':
+        return 'vps';
+      case 'downloads':
+        return 'downloads';
+      case 'billing':
+        return 'payments';
+      case 'support':
+        return 'tickets';
+      case 'legal':
+        return 'agreements';
+      case 'profile':
+      case 'security':
+        return 'profile';
+      default:
+        return 'overview';
+    }
+  };
+
   // Active portal tab
   const [activeTab, setActiveTab] = useState<
     | 'overview'
@@ -74,7 +104,13 @@ export const CustomerPortal: React.FC = () => {
     | 'tickets'
     | 'agreements'
     | 'profile'
-  >('overview');
+  >(getMappedTab(initialTab));
+
+  React.useEffect(() => {
+    if (initialTab) {
+      setActiveTab(getMappedTab(initialTab) as any);
+    }
+  }, [initialTab]);
 
   // Interactive local states
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -113,7 +149,7 @@ export const CustomerPortal: React.FC = () => {
   const [isVerifyingEmail, setIsVerifyingEmail] = useState(false);
 
   // Find user's primary licence
-  const userLicense = licenses.find(l => l.userId === currentUser.uid) || licenses[0];
+  const userLicense = licenses.find(l => l.userId === currentUser.uid);
   const userOrders = orders.filter(o => o.userId === currentUser.uid);
   const userInvoices = invoices.filter(i => i.userId === currentUser.uid);
   const userTickets = tickets.filter(t => t.userId === currentUser.uid);

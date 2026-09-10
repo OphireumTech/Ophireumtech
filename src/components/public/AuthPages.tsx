@@ -4,10 +4,11 @@
  * OPHIREUM Authentication Views: Login, Register, Password Recovery, Email Verification
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Shield, Lock, Mail, User, ArrowRight, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
+import { Shield, Lock, Mail, User, ArrowRight, CheckCircle2, AlertCircle, RefreshCw, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { auth } from '../../lib/firebase';
 
 interface AuthPagesProps {
   view: 'login' | 'register' | 'forgot-password' | 'verify-email';
@@ -21,6 +22,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ view }) => {
     addToast,
     sendPasswordReset,
     sendVerificationEmail,
+    checkVerificationStatus,
     currentUser
   } = useApp();
 
@@ -31,6 +33,28 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ view }) => {
   const [termsAgreed, setTermsAgreed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+
+  // 60-second cooldown timer for resend verification email
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
+  // If already verified, route to dashboard automatically
+  useEffect(() => {
+    if (view === 'verify-email') {
+      const fbUser = auth.currentUser;
+      if (fbUser?.emailVerified || currentUser?.isEmailVerified) {
+        setCurrentRoute('dashboard');
+      }
+    }
+  }, [view, currentUser?.isEmailVerified]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,10 +101,8 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ view }) => {
 
     setIsSubmitting(true);
     try {
-      const ok = await registerUser(cleanName, cleanEmail, password);
-      if (ok) {
-        setCurrentRoute('dashboard');
-      }
+      await registerUser(cleanName, cleanEmail, password);
+      // registerUser handles verification email dispatch and routes to verify-email
     } finally {
       setIsSubmitting(false);
     }
@@ -104,11 +126,44 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ view }) => {
   };
 
   const handleResendVerification = async () => {
-    setIsSubmitting(true);
+    const user = auth.currentUser;
+    if (!user) {
+      addToast('Authentication Required', 'Please log in to your account to resend the verification email.', 'warning');
+      setCurrentRoute('login');
+      return;
+    }
+
+    if (resendCooldown > 0 || isResending) return;
+
+    setIsResending(true);
     try {
-      await sendVerificationEmail();
+      const ok = await sendVerificationEmail();
+      if (ok) {
+        setResendCooldown(60);
+      }
     } finally {
-      setIsSubmitting(false);
+      setIsResending(false);
+    }
+  };
+
+  const handleCheckStatus = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      addToast('Authentication Required', 'Please log in to check your email verification status.', 'warning');
+      setCurrentRoute('login');
+      return;
+    }
+
+    if (isCheckingStatus) return;
+
+    setIsCheckingStatus(true);
+    try {
+      const verified = await checkVerificationStatus();
+      if (verified) {
+        setCurrentRoute('dashboard');
+      }
+    } finally {
+      setIsCheckingStatus(false);
     }
   };
 
@@ -360,37 +415,78 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ view }) => {
         {/* VERIFY EMAIL */}
         {view === 'verify-email' && (
           <div className="space-y-4 text-xs text-center">
-            <div className="w-12 h-12 mx-auto rounded-full bg-[#181C26] border border-[#C9A227]/30 flex items-center justify-center text-[#E4C765]">
-              <Mail className="w-6 h-6" />
+            <div className="w-14 h-14 mx-auto rounded-full bg-[#181C26] border border-[#C9A227]/40 flex items-center justify-center text-[#E4C765] shadow-lg shadow-[#C9A227]/5">
+              <Mail className="w-7 h-7 text-[#E4C765]" />
             </div>
-            <div className="space-y-1">
+
+            <div className="space-y-1.5">
               <h2 className="text-base font-bold text-white">Email Verification Required</h2>
-              <p className="text-zinc-400 text-xs">
-                A verification email was sent to your registered address:
+              <p className="text-zinc-400 text-xs leading-relaxed max-w-sm mx-auto">
+                We sent a secure verification link to your registered email address. Please click the link to activate your institutional access.
               </p>
-              <div className="font-semibold text-[#E4C765] text-sm py-1">
-                {currentUser?.email || 'your registered email'}
+              <div className="inline-block px-3 py-1 rounded-lg bg-[#0F131D] border border-[#232A3E] font-mono font-semibold text-[#E4C765] text-xs mt-1">
+                {auth.currentUser?.email || currentUser?.email || 'your registered email'}
               </div>
             </div>
 
-            <div className="pt-3 space-y-2">
+            {/* Verification Instructions Callout */}
+            <div className="p-3 rounded-xl bg-[#0C0F17] border border-[#1E2433] text-left text-zinc-400 space-y-1.5 text-[11px]">
+              <div className="flex items-center gap-1.5 font-semibold text-zinc-300">
+                <Shield className="w-3.5 h-3.5 text-[#C9A227]" />
+                <span>Verification Checklist:</span>
+              </div>
+              <ul className="list-disc list-inside space-y-1 pl-1 text-zinc-400">
+                <li>Check your inbox and <strong className="text-zinc-300">spam/junk folder</strong>.</li>
+                <li>Click the link in the email to verify with Firebase Auth.</li>
+                <li>Return here and click <strong className="text-zinc-300">Check Verification Status</strong>.</li>
+              </ul>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="pt-2 space-y-2.5">
+              {/* Check Status Button */}
               <button
+                type="button"
+                onClick={handleCheckStatus}
+                disabled={isCheckingStatus}
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#C9A227] to-[#E4C765] text-[#08090B] font-bold text-xs flex items-center justify-center gap-2 shadow-md hover:brightness-110 transition-all cursor-pointer disabled:opacity-50"
+              >
+                {isCheckingStatus ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin text-black" />
+                    <span>Checking Status...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 text-black" />
+                    <span>Check Verification Status</span>
+                  </>
+                )}
+              </button>
+
+              {/* Resend Verification Email Button */}
+              <button
+                type="button"
                 onClick={handleResendVerification}
-                disabled={isSubmitting}
+                disabled={resendCooldown > 0 || isResending}
                 className="w-full py-2.5 rounded-xl bg-[#161922] hover:bg-[#202534] border border-[#2A3040] text-zinc-200 font-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
               >
-                {isSubmitting ? (
-                  <RefreshCw className="w-4 h-4 animate-spin text-[#C9A227]" />
+                {isResending ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin text-[#C9A227]" />
+                    <span>Dispatched Link...</span>
+                  </>
+                ) : resendCooldown > 0 ? (
+                  <>
+                    <Clock className="w-4 h-4 text-[#C9A227]" />
+                    <span>Resend Available in {resendCooldown}s</span>
+                  </>
                 ) : (
-                  <RefreshCw className="w-4 h-4 text-[#C9A227]" />
+                  <>
+                    <RefreshCw className="w-4 h-4 text-[#C9A227]" />
+                    <span>Resend Verification Email</span>
+                  </>
                 )}
-                <span>Resend Verification Email</span>
-              </button>
-              <button
-                onClick={() => setCurrentRoute('dashboard')}
-                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#C9A227] to-[#E4C765] text-[#08090B] font-bold text-xs transition-all cursor-pointer"
-              >
-                Continue to Dashboard
               </button>
             </div>
           </div>

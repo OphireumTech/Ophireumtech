@@ -7,13 +7,19 @@ service firebase.storage {
     }
 
     function isSuperAdmin() {
+      return isAuth() && request.auth.token.role == 'super_admin';
+    }
+
+    function isStaff() {
       return isAuth() && (
         request.auth.token.role == 'super_admin' || 
-        request.auth.token.email == 'dhenzecapital@gmail.com'
+        request.auth.token.role == 'license_admin' || 
+        request.auth.token.role == 'finance_reviewer' || 
+        request.auth.token.role == 'support_agent'
       );
     }
 
-    // Protected EA Builds (Authenticated customers with active license only)
+    // Protected EA Builds (Authenticated customers with active license or staff only)
     match /ea_builds/{allPaths=**} {
       allow read: if isAuth();
       allow write: if isSuperAdmin();
@@ -21,7 +27,7 @@ service firebase.storage {
 
     // Customer Payment Receipts & Proofs
     match /payment_proofs/{userId}/{fileName} {
-      allow read: if isAuth() && (request.auth.uid == userId || isSuperAdmin());
+      allow read: if isAuth() && (request.auth.uid == userId || isStaff());
       allow write: if isAuth() && request.auth.uid == userId && 
         request.resource.size < 10 * 1024 * 1024 &&
         (request.resource.contentType.matches('image/.*') || request.resource.contentType == 'application/pdf');

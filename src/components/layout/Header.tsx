@@ -5,6 +5,7 @@
  */
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { UserRole } from '../../types';
 import {
@@ -41,6 +42,8 @@ export const Header: React.FC = () => {
     settings
   } = useApp();
 
+  const navigate = useNavigate();
+
   const [productMenuOpen, setProductMenuOpen] = useState(false);
   const [companyMenuOpen, setCompanyMenuOpen] = useState(false);
   const [helpMenuOpen, setHelpMenuOpen] = useState(false);
@@ -55,6 +58,8 @@ export const Header: React.FC = () => {
     setCompanyMenuOpen(false);
     setHelpMenuOpen(false);
     setMobileMenuOpen(false);
+    const path = route.startsWith('/') ? route : `/${route}`;
+    navigate(path);
   };
 
   return (
@@ -421,16 +426,43 @@ export const Header: React.FC = () => {
                 <Layers className="w-3.5 h-3.5" />
                 <span>Customer Portal</span>
               </button>
+              <button
+                onClick={logout}
+                className="p-2 rounded-lg bg-[#111318] hover:bg-rose-950/40 border border-[#232733] hover:border-rose-800 text-zinc-400 hover:text-rose-300 transition-colors cursor-pointer"
+                title="Log Out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
             </div>
           ) : (
             <div className="flex items-center gap-2">
               <button
-                id="header-btn-admin-portal"
-                onClick={() => handleNav('admin-overview')}
-                className="px-4 py-2 rounded-lg bg-red-950/60 border border-red-600/70 text-red-200 font-bold text-xs hover:bg-red-900/60 transition-all cursor-pointer flex items-center gap-1.5"
+                id="header-btn-staff-portal"
+                onClick={() => {
+                  if (currentRole === 'super_admin') handleNav('admin');
+                  else if (currentRole === 'license_admin') handleNav('license-dashboard');
+                  else if (currentRole === 'finance_reviewer') handleNav('finance-dashboard');
+                  else if (currentRole === 'support_agent') handleNav('support-dashboard');
+                }}
+                className="px-4 py-2 rounded-lg bg-[#141824] border border-[#2B354C] text-[#E4C765] font-bold text-xs hover:bg-[#1A2234] transition-all cursor-pointer flex items-center gap-1.5"
               >
-                <Shield className="w-3.5 h-3.5 text-red-400" />
-                <span>Admin Portal</span>
+                <Shield className="w-3.5 h-3.5 text-[#C9A227]" />
+                <span>
+                  {currentRole === 'super_admin'
+                    ? 'Super Admin'
+                    : currentRole === 'license_admin'
+                    ? 'Licence Desk'
+                    : currentRole === 'finance_reviewer'
+                    ? 'Finance Desk'
+                    : 'Support Desk'}
+                </span>
+              </button>
+              <button
+                onClick={logout}
+                className="p-2 rounded-lg bg-[#111318] hover:bg-rose-950/40 border border-[#232733] hover:border-rose-800 text-zinc-400 hover:text-rose-300 transition-colors cursor-pointer"
+                title="Log Out"
+              >
+                <LogOut className="w-4 h-4" />
               </button>
             </div>
           )}
