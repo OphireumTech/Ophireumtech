@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>OPHIREUM Redirecting...</title>
+    <script>
+      // Single Page Apps for GitHub Pages
+      // Redirects direct 404 paths to hash routes
+      (function () {
+        var path = window.location.pathname;
+        // Strip repo prefix '/Ophireumtech' if present
+        var repo = '/Ophireumtech';
+        var relative = path;
+        if (path.indexOf(repo) === 0) {
+          relative = path.slice(repo.length);
+        }
+        if (!relative || relative === '/') {
+          relative = '';
+        }
+        var target = repo + '/#' + (relative.startsWith('/') ? relative : '/' + relative) + window.location.search + window.location.hash;
+        window.location.replace(target);
+      })();
+    </script>
+  </head>
+  <body style="background-color: #08090b; color: #e4c765; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0;">
+    <div style="text-align: center;">
+      <h2>OPHIREUM Security Gateway</h2>
+      <p style="color: #9ca3af; font-size: 14px;">Redirecting to secure terminal...</p>
+    </div>
+  </body>
+</html>

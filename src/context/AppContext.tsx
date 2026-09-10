@@ -5,6 +5,7 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   UserProfile,
   UserRole,
@@ -145,15 +146,44 @@ export interface AppContextType {
   removeToast: (id: string) => void;
 }
 
+export const VISITOR_USER: UserProfile = {
+  uid: '',
+  email: '',
+  fullName: 'Institutional Visitor',
+  role: 'visitor',
+  isEmailVerified: false,
+  mfaEnabled: false,
+  starterPurchased: false,
+  createdAt: '',
+  updatedAt: '',
+  agreementsAccepted: null
+};
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Navigation
-  const [currentRoute, setCurrentRoute] = useState<string>('home');
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  // Auth & Roles
-  const [currentUser, setCurrentUser] = useState<UserProfile>(INITIAL_USERS[0]); // Antonio Luna (Customer)
-  const [currentRole, setCurrentRole] = useState<UserRole>('customer');
+  // Navigation state derived from URL
+  const currentPath = location.pathname.replace(/^\//, '') || 'home';
+  const [currentRoute, setCurrentRouteState] = useState<string>(currentPath);
+
+  useEffect(() => {
+    const active = location.pathname.replace(/^\//, '') || 'home';
+    setCurrentRouteState(active);
+  }, [location.pathname]);
+
+  const setCurrentRoute = useCallback((route: string) => {
+    let path = route;
+    if (route === 'home') path = '/';
+    else if (!path.startsWith('/')) path = `/${route}`;
+    navigate(path);
+  }, [navigate]);
+
+  // Auth & Roles - initialize to visitor
+  const [currentUser, setCurrentUser] = useState<UserProfile>(VISITOR_USER);
+  const [currentRole, setCurrentRole] = useState<UserRole>('visitor');
 
   // Collections (Hydrated from Firestore with local fallback)
   const [plans, setPlans] = useState<LicensePlan[]>(INITIAL_PLANS);
