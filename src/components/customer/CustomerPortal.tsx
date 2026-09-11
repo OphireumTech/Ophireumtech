@@ -31,6 +31,7 @@ import {
   Plus
 } from 'lucide-react';
 import { PaymentMethod, TicketCategory, TicketPriority } from '../../types';
+import { BrandLogo } from '../common/BrandLogo';
 
 interface CustomerPortalProps {
   initialTab?: string;
@@ -265,7 +266,15 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({ initialTab }) =>
       {/* Main Layout Grid with Sidebar Tabs */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Navigation Sidebar */}
-        <div className="space-y-1 bg-[#0D1017] border border-[#1E2330] rounded-2xl p-3 h-fit">
+        <div className="space-y-3 bg-[#0D1017] border border-[#1E2330] rounded-2xl p-3.5 h-fit">
+          <div className="pb-3 border-b border-[#1E2330] flex items-center justify-between">
+            <BrandLogo size="sm" showText={true} />
+            <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-[#C9A227]/10 text-[#E4C765] border border-[#C9A227]/20">
+              Client
+            </span>
+          </div>
+
+          <div className="space-y-1">
           {[
             { key: 'overview', label: 'Dashboard Overview', icon: Layers },
             { key: 'my-license', label: 'My Licence & Policy', icon: Key },
@@ -291,6 +300,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({ initialTab }) =>
               <span>{tab.label}</span>
             </button>
           ))}
+          </div>
         </div>
 
         {/* Dynamic Content Panel */}
@@ -1272,9 +1282,12 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({ initialTab }) =>
             </button>
 
             <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
-              <div>
-                <div className="font-display font-bold text-lg text-white">OPHIREUM INVOICE</div>
-                <div className="text-zinc-500 font-mono">{selectedInvoice.id}</div>
+              <div className="flex items-center gap-3">
+                <BrandLogo size="sm" showText={false} asLink={false} />
+                <div>
+                  <div className="font-display font-bold text-lg text-white">OPHIREUM INVOICE</div>
+                  <div className="text-zinc-500 font-mono">{selectedInvoice.id}</div>
+                </div>
               </div>
               <div className="text-right">
                 <span className="text-xs px-2 py-0.5 bg-emerald-950 text-emerald-300 font-bold uppercase rounded">

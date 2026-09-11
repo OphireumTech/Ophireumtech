@@ -6,6 +6,7 @@
 
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { BrandLogo } from '../common/BrandLogo';
 import {
   Shield,
   Eye,
@@ -53,9 +54,12 @@ export const CompanyPages: React.FC<CompanyPageProps> = ({ section }) => {
       {section === 'about' && (
         <div className="space-y-10">
           <div className="max-w-3xl space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#141924] border border-[#C9A227]/30 text-[#E4C765] text-xs font-semibold">
-              <Building className="w-3.5 h-3.5" />
-              <span>Corporate & Engineering Profile</span>
+            <div className="flex items-center gap-4 mb-2">
+              <BrandLogo size="md" showText={false} asLink={false} />
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#141924] border border-[#C9A227]/30 text-[#E4C765] text-xs font-semibold">
+                <Building className="w-3.5 h-3.5" />
+                <span>Corporate & Engineering Profile</span>
+              </div>
             </div>
             <h1 className="text-3xl sm:text-5xl font-display font-bold text-white tracking-tight">
               About OPHIREUM

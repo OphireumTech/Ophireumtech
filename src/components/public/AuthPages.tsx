@@ -9,6 +9,7 @@ import { useApp } from '../../context/AppContext';
 import { Shield, Lock, Mail, User, ArrowRight, CheckCircle2, AlertCircle, RefreshCw, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { auth } from '../../lib/firebase';
+import { BrandLogo } from '../common/BrandLogo';
 
 interface AuthPagesProps {
   view: 'login' | 'register' | 'forgot-password' | 'verify-email';
@@ -170,13 +171,9 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ view }) => {
   return (
     <div className="max-w-md mx-auto px-4 py-16 space-y-8">
       {/* Brand Header */}
-      <div className="text-center space-y-2">
-        <div className="w-12 h-12 mx-auto rounded-xl bg-gradient-to-br from-[#E4C765] to-[#C9A227] p-0.5 flex items-center justify-center shadow-lg shadow-[#C9A227]/10">
-          <div className="w-full h-full bg-[#08090B] rounded-[10px] flex items-center justify-center">
-            <Shield className="w-6 h-6 text-[#E4C765]" />
-          </div>
-        </div>
-        <h1 className="text-2xl font-display font-bold text-white">
+      <div className="text-center space-y-3 flex flex-col items-center">
+        <BrandLogo size="lg" to="/home" onClick={() => setCurrentRoute('home')} />
+        <h1 className="text-2xl font-display font-bold text-white pt-1">
           {view === 'login' && 'Institutional Client Access'}
           {view === 'register' && 'Deploy OPHIREUM Account'}
           {view === 'forgot-password' && 'Password Recovery'}

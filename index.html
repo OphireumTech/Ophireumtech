@@ -5,16 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>OPHIREUM EXPERT ASSISTANT | Discipline in Every Execution</title>
     <meta name="description" content="Disciplined gold trading automation for MetaTrader 5. Secure account-bound licensing, VPS management, and operational controls by OPHIREUM Multimedia Production." />
+    
+    <!-- Official Favicons & PWA Icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="%BASE_URL%images/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="%BASE_URL%images/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="%BASE_URL%images/favicon-48x48.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="%BASE_URL%images/favicon-64x64.png" />
+    <link rel="apple-touch-icon" href="%BASE_URL%images/ophireum-icon-192.png" />
+    <link rel="manifest" href="%BASE_URL%manifest.json" />
+    <meta name="theme-color" content="#07090D" />
+
     <meta property="og:title" content="OPHIREUM EXPERT ASSISTANT | Discipline in Every Execution" />
     <meta property="og:description" content="Disciplined gold trading automation for MetaTrader 5. Secure account-bound licensing, VPS management, and operational controls by OPHIREUM Multimedia Production." />
     <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://ophireumtech.github.io/Ophireumtech/images/ophireum-icon-512.png" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://ophireumtech.github.io/Ophireumtech/images/ophireum-icon-512.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   </head>
   <body class="bg-[#08090B] text-[#F7F3E8] antialiased selection:bg-[#C9A227]/30 selection:text-[#E4C765]">
-    <div id="root"></div>
+    <div id="root">
+      <!-- Branded initial loading screen (rendered until React hydrates) -->
+      <div style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #08090B; color: #F7F3E8; font-family: 'Plus Jakarta Sans', system-ui, sans-serif;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 18px;">
+          <div style="width: 60px; height: 60px; padding: 6px; border-radius: 16px; border: 1px solid rgba(212, 175, 55, 0.35); background: rgba(7, 9, 13, 0.95); box-shadow: 0 4px 20px rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center;">
+            <img src="%BASE_URL%images/ophireum-logo.png" alt="OPHIREUM" style="width: 46px; height: 46px; object-fit: contain; filter: drop-shadow(0 0 1px rgba(255, 232, 160, 0.65)) drop-shadow(0 4px 12px rgba(212, 175, 55, 0.25));" />
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+            <span style="font-family: 'Cinzel', serif, Georgia; font-weight: 700; color: #F5D77A; letter-spacing: 0.16em; font-size: 15px;">OPHIREUM</span>
+            <span style="font-family: monospace; color: #A7ADB7; font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; margin-top: 4px;">EXPERT ASSISTANT</span>
+          </div>
+          <div style="width: 100px; height: 2px; background: rgba(212, 175, 55, 0.15); border-radius: 9999px; overflow: hidden; margin-top: 6px;">
+            <div style="width: 100%; height: 100%; background: linear-gradient(90deg, transparent, #D4AF37, transparent); animation: pulse 1.5s ease-in-out infinite;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

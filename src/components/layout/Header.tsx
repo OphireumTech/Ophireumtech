@@ -8,6 +8,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { UserRole } from '../../types';
+import { BrandLogo } from '../common/BrandLogo';
 import {
   Shield,
   Layers,
@@ -119,27 +120,13 @@ export const Header: React.FC = () => {
       {/* Main Navigation Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
         {/* Brand Logo */}
-        <div 
-          onClick={() => handleNav('home')} 
-          className="flex items-center gap-3 cursor-pointer group select-none"
-          id="header-brand-logo"
-        >
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#E4C765] via-[#C9A227] to-[#8C6F14] p-0.5 shadow-lg shadow-[#C9A227]/10 flex items-center justify-center">
-            <div className="w-full h-full bg-[#08090B] rounded-[7px] flex items-center justify-center">
-              <Shield className="w-5 h-5 text-[#E4C765] group-hover:scale-110 transition-transform" />
-            </div>
-          </div>
-          <div>
-            <div className="font-display font-bold text-lg tracking-wider text-[#FFFFFF] flex items-center gap-1.5">
-              OPHIREUM
-              <span className="text-[10px] tracking-normal font-sans font-semibold px-1.5 py-0.2 rounded bg-[#C9A227]/20 text-[#E4C765] border border-[#C9A227]/30">
-                EXPERT ASSISTANT
-              </span>
-            </div>
-            <div className="text-[10px] tracking-widest uppercase text-[#9CA3AF]">
-              Discipline in Every Execution.
-            </div>
-          </div>
+        <div id="header-brand-logo" className="flex-shrink-0">
+          <BrandLogo
+            size="md"
+            iconOnlyOnMobile={true}
+            to="/home"
+            onClick={() => handleNav('home')}
+          />
         </div>
 
         {/* Desktop Links */}
@@ -481,6 +468,13 @@ export const Header: React.FC = () => {
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
         <div className="lg:hidden bg-[#0D0F14] border-b border-[#232733] px-4 py-4 space-y-3 animate-in fade-in">
+          <div className="flex items-center justify-between pb-3 border-b border-zinc-800/80">
+            <BrandLogo size="sm" showText={true} to="/home" onClick={() => handleNav('home')} />
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#C9A227]/10 text-[#E4C765] border border-[#C9A227]/20">
+              v2.4.1 MT5
+            </span>
+          </div>
+
           <div className="grid grid-cols-2 gap-2 text-xs">
             <button onClick={() => handleNav('home')} className="p-2 text-left bg-zinc-900 rounded font-medium">Home</button>
             <button onClick={() => handleNav('pricing')} className="p-2 text-left bg-zinc-900 rounded font-medium">Pricing Plans</button>

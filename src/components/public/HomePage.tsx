@@ -72,8 +72,14 @@ export const HomePage: React.FC = () => {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center space-y-8">
           {/* Institutional Badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#141822] border border-[#C9A227]/30 text-[#E4C765] text-xs font-medium shadow-sm">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-[#141822] border border-[#C9A227]/35 text-[#E4C765] text-xs font-medium shadow-md">
+            <img
+              src={`${import.meta.env.BASE_URL}images/ophireum-logo.png`}
+              alt="Ophireum"
+              className="w-4 h-4 object-contain flex-shrink-0"
+              style={{ filter: 'drop-shadow(0 0 1px rgba(255, 232, 160, 0.65))' }}
+            />
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
             <span>OPHIREUM Multimedia Production • Automated Gold Infrastructure</span>
           </div>
 

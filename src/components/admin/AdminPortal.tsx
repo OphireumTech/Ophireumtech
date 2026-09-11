@@ -30,6 +30,7 @@ import {
 import { UserProfile, UserRole } from '../../types';
 import { auth, db } from '../../lib/firebase';
 import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
+import { BrandLogo } from '../common/BrandLogo';
 
 export const AdminPortal: React.FC = () => {
   const {
@@ -170,17 +171,20 @@ export const AdminPortal: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
       {/* Top Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#2B354C] pb-6">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="px-2.5 py-0.5 rounded-full bg-rose-950/60 border border-rose-600/40 text-rose-300 font-mono text-[10px] tracking-wider uppercase">
-              Root Authority
-            </span>
-            <span className="text-zinc-500 text-xs font-mono">• Super Administrator Session</span>
+        <div className="flex items-start gap-4">
+          <BrandLogo size="md" showText={false} asLink={false} className="mt-0.5" />
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="px-2.5 py-0.5 rounded-full bg-rose-950/60 border border-rose-600/40 text-rose-300 font-mono text-[10px] tracking-wider uppercase">
+                Root Authority
+              </span>
+              <span className="text-zinc-500 text-xs font-mono">• Super Administrator Session</span>
+            </div>
+            <h1 className="text-2xl font-bold text-white font-display">Executive Governance & Security Console</h1>
+            <p className="text-xs text-zinc-400 mt-0.5">
+              Cryptographic role assignments, global emergency kill-switch, system parameters, and immutable audit ledger.
+            </p>
           </div>
-          <h1 className="text-2xl font-bold text-white font-display">Executive Governance & Security Console</h1>
-          <p className="text-xs text-zinc-400 mt-0.5">
-            Cryptographic role assignments, global emergency kill-switch, system parameters, and immutable audit ledger.
-          </p>
         </div>
 
         <div className="flex items-center gap-3">

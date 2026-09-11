@@ -6,6 +6,7 @@
 
 import React from 'react';
 import { useApp } from '../../context/AppContext';
+import { BrandLogo } from '../common/BrandLogo';
 import {
   Shield,
   Mail,
@@ -33,15 +34,8 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
           {/* Brand & Division */}
           <div className="lg:col-span-2 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded bg-gradient-to-br from-[#E4C765] to-[#C9A227] p-0.5 flex items-center justify-center">
-                <div className="w-full h-full bg-[#08090B] rounded-[3px] flex items-center justify-center">
-                  <Shield className="w-4 h-4 text-[#E4C765]" />
-                </div>
-              </div>
-              <span className="font-display font-bold text-base tracking-wider text-white">
-                OPHIREUM
-              </span>
+            <div>
+              <BrandLogo size="md" to="/home" onClick={() => handleNav('home')} />
             </div>
 
             <p className="text-zinc-400 text-xs leading-relaxed max-w-sm">

@@ -6,13 +6,14 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Shield, Home, LifeBuoy, ArrowLeft } from 'lucide-react';
+import { Home, LifeBuoy } from 'lucide-react';
+import { BrandLogo } from './BrandLogo';
 
 export const NotFoundPage: React.FC = () => {
   return (
     <div className="max-w-2xl mx-auto px-4 py-24 text-center space-y-6">
-      <div className="w-16 h-16 mx-auto rounded-2xl bg-[#121520] border border-[#C9A227]/40 flex items-center justify-center text-[#E4C765]">
-        <Shield className="w-8 h-8" />
+      <div className="flex justify-center">
+        <BrandLogo size="lg" showText={false} asLink={false} />
       </div>
 
       <div className="space-y-2">
