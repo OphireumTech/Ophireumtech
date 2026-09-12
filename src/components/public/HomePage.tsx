@@ -464,7 +464,7 @@ export const HomePage: React.FC = () => {
               <span className="text-[#E4C765]">Host:</span> api.ophireum.com<br />
               <span className="text-[#E4C765]">Licence:</span> OPH-8924-4102-XAU<br />
               <span className="text-[#E4C765]">Symbol:</span> XAUUSD<br />
-              <span className="text-[#E4C765]">MT5 Account:</span> 7729014 (IC Markets SC)<br />
+              <span className="text-[#E4C765]">MT5 Account:</span> 7729014 (Vantage Markets)<br />
               <span className="text-[#E4C765]">Nonce Replay Check:</span> PASSED [Unique]<br />
               <span className="text-[#E4C765]">Timestamp Window:</span> +1.2s [Tolerance ±300s]<br />
               <span className="text-[#E4C765]">Cryptographic Sig:</span> VERIFIED

@@ -220,7 +220,7 @@ export const HelpCenter: React.FC<HelpCenterProps> = ({ section }) => {
             <div className="p-6 rounded-xl bg-[#0D1017] border border-[#1E2330] space-y-2">
               <h3 className="font-semibold text-white text-sm">Which brokers are supported?</h3>
               <p className="text-zinc-400 leading-relaxed">
-                OPHIREUM supports any regulated brokerage offering MetaTrader 5 with Raw/ECN gold spreads, such as IC Markets, Pepperstone, or Tickmill. Standard accounts are supported, but Raw/Zero spread accounts are strongly recommended.
+                OPHIREUM execution is strictly limited to four authorized partner brokerages: FBS.com, GTCFX.com, Vantage Markets (Pty) Ltd, and Pepperstone Markets Limited. Accounts must run on MetaTrader 5, and Raw Spread / ECN account types are strongly recommended for optimal gold execution.
               </p>
             </div>
 

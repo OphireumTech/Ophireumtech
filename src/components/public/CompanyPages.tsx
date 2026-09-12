@@ -357,7 +357,7 @@ export const CompanyPages: React.FC<CompanyPageProps> = ({ section }) => {
                     <input
                       type="text"
                       required
-                      placeholder="e.g. Question regarding IC Markets WebRequest URL"
+                      placeholder="e.g. Question regarding Pepperstone WebRequest URL"
                       value={contactSubject}
                       onChange={(e) => setContactSubject(e.target.value)}
                       className="w-full bg-[#111420] border border-[#232838] rounded-lg p-2.5 text-zinc-100 focus:border-[#C9A227] outline-none"

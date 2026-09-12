@@ -212,7 +212,7 @@ export const ProductPages: React.FC<ProductPageProps> = ({ section }) => {
               </div>
               <div className="p-4 bg-[#111420] rounded-lg border border-zinc-800">
                 <span className="text-zinc-500 block">Broker Latency</span>
-                <span className="font-semibold text-emerald-400">&lt; 1.5ms to IC Markets</span>
+                <span className="font-semibold text-emerald-400">&lt; 1.5ms to Approved Broker Servers (FBS, GTCFX, Vantage, Pepperstone)</span>
               </div>
               <div className="p-4 bg-[#111420] rounded-lg border border-zinc-800">
                 <span className="text-zinc-500 block">Pre-Configuration</span>
@@ -334,7 +334,7 @@ export const ProductPages: React.FC<ProductPageProps> = ({ section }) => {
               { num: '01', title: 'Register & Accept Disclosures', text: 'Create an account and complete formal acceptance of Terms of Use, Software Licence Agreement, and Trading Risk Disclosures. Each acceptance is saved with IP audit context.' },
               { num: '02', title: 'Select Licence Package', text: 'Choose an eligible package (Starter Trial 199 USDT, Professional 1,399 USDT, Premium 2,499 USDT, or Institutional 19,999 USDT). Our backend freezes plan pricing into an immutable order.' },
               { num: '03', title: 'Payment Verification & Atomic Activation', text: 'Submit transaction hash for USDT-TRC20, USDT-ERC20, or bank wire. Once verified by our finance desk, exactly one licence is atomically generated.' },
-              { num: '04', title: 'Bind MT5 Login Account', text: 'Provide your MT5 login number, broker name (e.g. IC Markets), and server. The licence is permanently bound to this single MT5 environment.' },
+              { num: '04', title: 'Bind MT5 Login Account', text: 'Select an authorized broker partner (FBS.com, GTCFX.com, Vantage Markets (Pty) Ltd, or Pepperstone Markets Limited), enter your MT5 login, and establish an encrypted execution session.' },
               { num: '05', title: 'Download Approved EA & Configure WebRequest', text: 'Download the verified .ex5 build and add https://api.ophireum.com to your MT5 terminal WebRequest whitelist.' },
               { num: '06', title: 'Live Heartbeat Telemetry & Monitoring', text: 'Attach the EA to a 15-minute XAUUSD chart. The EA communicates with OPHIREUM APIs, transacting gold under strict protective stop-loss rules.' }
             ].map((step, idx) => (

@@ -162,6 +162,280 @@
         "vpsAnnualPriceUSDT": { "type": "number" }
       },
       "required": ["webrequestUrl", "contactEmail", "globalEmergencyStop"]
+    },
+    "Mt5Binding": {
+      "title": "Mt5Binding",
+      "description": "Multi-state MT5 account binding with assigned Windows VPS worker",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "licenseId": { "type": "string" },
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "mt5Login": { "type": "string" },
+        "brokerName": { "type": "string", "enum": ["FBS.com", "GTCFX.com", "Vantage Markets (Pty) Ltd", "Pepperstone Markets Limited"] },
+        "brokerServer": { "type": "string" },
+        "accountType": { "type": "string" },
+        "status": { "type": "string", "enum": ["draft", "pending_worker_validation", "active", "suspended", "unbound", "disconnected", "failed"] },
+        "connectionState": { "type": "string", "enum": ["binding_infrastructure_pending", "connecting", "connected", "disconnected", "error"] },
+        "credentialRefId": { "type": "string" },
+        "workerId": { "type": "string" },
+        "workerAssignedAt": { "type": "string" },
+        "boundAt": { "type": "string" },
+        "lastVerifiedAt": { "type": "string" },
+        "lastSyncAt": { "type": "string" },
+        "terminalLatencyMs": { "type": "number" },
+        "terminalConnected": { "type": "boolean" },
+        "executionHalted": { "type": "boolean" },
+        "haltReason": { "type": "string" },
+        "goldSymbolMapped": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["licenseId", "userId", "mt5Login", "brokerName", "brokerServer", "status", "connectionState"]
+    },
+    "Mt5Worker": {
+      "title": "Mt5Worker",
+      "description": "Authorized Windows VPS MT5 Terminal execution worker",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "ipAddress": { "type": "string" },
+        "region": { "type": "string" },
+        "os": { "type": "string" },
+        "terminalVersion": { "type": "string" },
+        "status": { "type": "string", "enum": ["online", "offline", "busy", "maintenance"] },
+        "activeAccountsCount": { "type": "number" },
+        "maxAccountsCapacity": { "type": "number" },
+        "lastHeartbeatAt": { "type": "string" },
+        "approvedBrokers": { "type": "array" }
+      },
+      "required": ["id", "name", "ipAddress", "status"]
+    },
+    "Mt5AccountSnapshot": {
+      "title": "Mt5AccountSnapshot",
+      "description": "Verified live MT5 account metrics from Windows VPS terminal",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "licenseId": { "type": "string" },
+        "userId": { "type": "string" },
+        "mt5Login": { "type": "string" },
+        "broker": { "type": "string" },
+        "server": { "type": "string" },
+        "currency": { "type": "string" },
+        "balance": { "type": "number" },
+        "equity": { "type": "number" },
+        "margin": { "type": "number" },
+        "freeMargin": { "type": "number" },
+        "marginLevel": { "type": "number" },
+        "leverage": { "type": "number" },
+        "floatingProfit": { "type": "number" },
+        "openPositionsCount": { "type": "number" },
+        "activeOrdersCount": { "type": "number" },
+        "pingMs": { "type": "number" },
+        "terminalConnected": { "type": "boolean" },
+        "tradingAllowed": { "type": "boolean" },
+        "goldSymbolMapped": { "type": "string" },
+        "snapshotTimestamp": { "type": "string" },
+        "workerId": { "type": "string" }
+      },
+      "required": ["licenseId", "userId", "mt5Login", "balance", "equity", "snapshotTimestamp"]
+    },
+    "Mt5Position": {
+      "title": "Mt5Position",
+      "description": "Live open market position executed on MT5 terminal",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "licenseId": { "type": "string" },
+        "userId": { "type": "string" },
+        "mt5Login": { "type": "string" },
+        "ticket": { "type": "number" },
+        "symbol": { "type": "string" },
+        "type": { "type": "string" },
+        "volume": { "type": "number" },
+        "openPrice": { "type": "number" },
+        "currentPrice": { "type": "number" },
+        "sl": { "type": "number" },
+        "tp": { "type": "number" },
+        "profit": { "type": "number" },
+        "openTime": { "type": "string" }
+      },
+      "required": ["licenseId", "ticket", "symbol", "type", "volume", "openPrice"]
+    },
+    "Mt5Order": {
+      "title": "Mt5Order",
+      "description": "Pending order on MT5 terminal",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "licenseId": { "type": "string" },
+        "ticket": { "type": "number" },
+        "symbol": { "type": "string" },
+        "type": { "type": "string" },
+        "volume": { "type": "number" },
+        "price": { "type": "number" },
+        "state": { "type": "string" }
+      },
+      "required": ["licenseId", "ticket", "symbol", "type", "volume"]
+    },
+    "Mt5Deal": {
+      "title": "Mt5Deal",
+      "description": "Historical closed trade deal on MT5 terminal",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "licenseId": { "type": "string" },
+        "ticket": { "type": "number" },
+        "symbol": { "type": "string" },
+        "type": { "type": "string" },
+        "volume": { "type": "number" },
+        "price": { "type": "number" },
+        "profit": { "type": "number" },
+        "executedAt": { "type": "string" }
+      },
+      "required": ["licenseId", "ticket", "profit", "executedAt"]
+    },
+    "ExecutionRequest": {
+      "title": "ExecutionRequest",
+      "description": "Encrypted command queue item dispatched to Windows VPS worker",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "licenseId": { "type": "string" },
+        "userId": { "type": "string" },
+        "workerId": { "type": "string" },
+        "command": { "type": "string" },
+        "status": { "type": "string", "enum": ["queued", "in_progress", "completed", "failed"] },
+        "attempts": { "type": "number" },
+        "requestedAt": { "type": "string" }
+      },
+      "required": ["licenseId", "command", "status", "requestedAt"]
+    },
+    "ExecutionResult": {
+      "title": "ExecutionResult",
+      "description": "Execution result received from Windows VPS MT5 worker",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "requestId": { "type": "string" },
+        "licenseId": { "type": "string" },
+        "workerId": { "type": "string" },
+        "command": { "type": "string" },
+        "success": { "type": "boolean" },
+        "returnCode": { "type": "number" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["requestId", "licenseId", "success", "timestamp"]
+    },
+    "AccountHeartbeat": {
+      "title": "AccountHeartbeat",
+      "description": "Worker to broker terminal ping and telemetry",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "licenseId": { "type": "string" },
+        "mt5Login": { "type": "string" },
+        "workerId": { "type": "string" },
+        "status": { "type": "string" },
+        "latencyMs": { "type": "number" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["licenseId", "workerId", "status", "timestamp"]
+    },
+    "BrokerServer": {
+      "title": "BrokerServer",
+      "description": "Approved broker servers catalog",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "brokerName": { "type": "string" },
+        "serverName": { "type": "string" },
+        "isLive": { "type": "boolean" },
+        "goldSymbol": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["brokerName", "serverName", "goldSymbol"]
+    },
+    "SymbolMapping": {
+      "title": "SymbolMapping",
+      "description": "Verified broker gold symbol specifications",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "brokerName": { "type": "string" },
+        "standardSymbol": { "type": "string" },
+        "brokerSymbol": { "type": "string" },
+        "contractSize": { "type": "number" },
+        "digits": { "type": "number" },
+        "minLot": { "type": "number" },
+        "maxLot": { "type": "number" },
+        "isVerified": { "type": "boolean" }
+      },
+      "required": ["brokerName", "standardSymbol", "brokerSymbol", "isVerified"]
+    },
+    "RiskPolicy": {
+      "title": "RiskPolicy",
+      "description": "Deterministic algorithmic trading safety policy",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "planId": { "type": "string" },
+        "maxLot": { "type": "number" },
+        "riskPercent": { "type": "number" },
+        "hardStopLossRequired": { "type": "boolean" },
+        "maxDailyLossPct": { "type": "number" }
+      },
+      "required": ["planId", "maxLot", "hardStopLossRequired"]
+    },
+    "AutomationEvent": {
+      "title": "AutomationEvent",
+      "description": "Trading automation lifecycle events",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "licenseId": { "type": "string" },
+        "eventType": { "type": "string" },
+        "severity": { "type": "string" },
+        "details": { "type": "string" },
+        "actor": { "type": "string" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["licenseId", "eventType", "severity", "timestamp"]
+    },
+    "CredentialReference": {
+      "title": "CredentialReference",
+      "description": "GCP Secret Manager reference ID, never plaintext credentials",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "licenseId": { "type": "string" },
+        "userId": { "type": "string" },
+        "mt5Login": { "type": "string" },
+        "brokerServer": { "type": "string" },
+        "secretManagerUri": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["licenseId", "secretManagerUri", "createdAt"]
+    },
+    "BindingAuditLog": {
+      "title": "BindingAuditLog",
+      "description": "Immutable security and audit log for MT5 binding events",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "licenseId": { "type": "string" },
+        "userId": { "type": "string" },
+        "actorUid": { "type": "string" },
+        "action": { "type": "string" },
+        "details": { "type": "string" },
+        "ipAddress": { "type": "string" },
+        "status": { "type": "string" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["licenseId", "action", "status", "timestamp"]
     }
   },
   "firestore": {
@@ -196,6 +470,66 @@
     "/system_settings/{settingId}": {
       "schema": "SystemSettings",
       "description": "Global infrastructure and emergency settings"
+    },
+    "/mt5Bindings/{bindingId}": {
+      "schema": "Mt5Binding",
+      "description": "Multi-state MT5 account binding records"
+    },
+    "/mt5Workers/{workerId}": {
+      "schema": "Mt5Worker",
+      "description": "Authorized Windows VPS MT5 execution workers"
+    },
+    "/mt5AccountSnapshots/{snapshotId}": {
+      "schema": "Mt5AccountSnapshot",
+      "description": "Live verified MT5 account metrics from worker"
+    },
+    "/mt5Positions/{positionId}": {
+      "schema": "Mt5Position",
+      "description": "Live open positions"
+    },
+    "/mt5Orders/{orderId}": {
+      "schema": "Mt5Order",
+      "description": "Active pending orders"
+    },
+    "/mt5Deals/{dealId}": {
+      "schema": "Mt5Deal",
+      "description": "Historical deals and execution reports"
+    },
+    "/executionRequests/{requestId}": {
+      "schema": "ExecutionRequest",
+      "description": "Encrypted command queue items for MT5 workers"
+    },
+    "/executionResults/{resultId}": {
+      "schema": "ExecutionResult",
+      "description": "Execution result responses from workers"
+    },
+    "/accountHeartbeats/{heartbeatId}": {
+      "schema": "AccountHeartbeat",
+      "description": "Terminal and worker latency heartbeats"
+    },
+    "/brokerServers/{serverId}": {
+      "schema": "BrokerServer",
+      "description": "Catalog of verified broker servers"
+    },
+    "/symbolMappings/{mappingId}": {
+      "schema": "SymbolMapping",
+      "description": "Approved XAUUSD gold symbol mappings"
+    },
+    "/riskPolicies/{policyId}": {
+      "schema": "RiskPolicy",
+      "description": "Algorithmic risk policies"
+    },
+    "/automationEvents/{eventId}": {
+      "schema": "AutomationEvent",
+      "description": "Execution halt and safety events"
+    },
+    "/credentialReferences/{credentialId}": {
+      "schema": "CredentialReference",
+      "description": "GCP Secret Manager reference ID, strictly internal"
+    },
+    "/bindingAuditLogs/{logId}": {
+      "schema": "BindingAuditLog",
+      "description": "Immutable MT5 binding audit records"
     }
   }
 }

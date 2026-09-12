@@ -92,15 +92,285 @@ export interface License {
   updatedAt: string;
 }
 
+// ============================================================================
+// APPROVED BROKERS SPECIFICATION (STRICT - NO OTHER BROKERS ALLOWED)
+// ============================================================================
+export type ApprovedBrokerName =
+  | 'FBS.com'
+  | 'GTCFX.com'
+  | 'Vantage Markets (Pty) Ltd'
+  | 'Pepperstone Markets Limited';
+
+export interface ApprovedBrokerConfig {
+  name: ApprovedBrokerName;
+  displayName: string;
+  website: string;
+  regulatoryJurisdiction: string;
+  servers: string[];
+  defaultGoldSymbol: string;
+  supportedGoldSymbols: string[];
+  recommendedAccountType: 'Raw Spread / ECN' | 'Standard' | 'Pro / Zero';
+  minDepositUsd: number;
+  maxLeverage: string;
+}
+
+export type Mt5BindingState =
+  | 'draft'
+  | 'pending_worker_validation'
+  | 'active'
+  | 'suspended'
+  | 'unbound'
+  | 'disconnected'
+  | 'failed';
+
+export type Mt5ConnectionStatus =
+  | 'binding_infrastructure_pending'
+  | 'connecting'
+  | 'connected'
+  | 'disconnected'
+  | 'error';
+
 export interface Mt5Binding {
+  id?: string;
+  licenseId: string;
+  userId: string;
+  userEmail?: string;
+  mt5Login: string;
+  brokerName: ApprovedBrokerName | string;
+  brokerServer: string;
+  accountType: string;
+  status: Mt5BindingState;
+  connectionState: Mt5ConnectionStatus;
+  credentialRefId?: string; // Reference to Secret Manager encrypted credential, NEVER plaintext password
+  workerId?: string; // Assigned Windows VPS MT5 Worker
+  workerAssignedAt?: string;
+  boundAt?: string;
+  lastVerifiedAt?: string;
+  lastSyncAt?: string;
+  terminalLatencyMs?: number;
+  terminalConnected?: boolean;
+  executionHalted?: boolean;
+  haltReason?: string;
+  goldSymbolMapped?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Mt5Worker {
+  id: string; // e.g. worker-win-vps-01
+  name: string;
+  ipAddress: string;
+  region: string;
+  os: string;
+  terminalVersion: string;
+  status: 'online' | 'offline' | 'busy' | 'maintenance';
+  activeAccountsCount: number;
+  maxAccountsCapacity: number;
+  lastHeartbeatAt: string;
+  approvedBrokers: ApprovedBrokerName[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Mt5AccountSnapshot {
+  id?: string;
   licenseId: string;
   userId: string;
   mt5Login: string;
-  brokerName: string;
+  broker: string;
+  server: string;
+  currency: string;
+  balance: number;
+  equity: number;
+  margin: number;
+  freeMargin: number;
+  marginLevel: number;
+  leverage: number;
+  floatingProfit: number;
+  closedProfitToday: number;
+  openPositionsCount: number;
+  activeOrdersCount: number;
+  pingMs: number;
+  terminalConnected: boolean;
+  tradingAllowed: boolean;
+  eaAttached: boolean;
+  goldSymbolMapped: string;
+  workerId: string;
+  snapshotTimestamp: string;
+}
+
+export interface Mt5Position {
+  id: string;
+  licenseId: string;
+  userId: string;
+  mt5Login: string;
+  ticket: number;
+  symbol: string;
+  type: 'BUY' | 'SELL';
+  volume: number;
+  openPrice: number;
+  currentPrice: number;
+  sl: number;
+  tp: number;
+  profit: number;
+  swap: number;
+  openTime: string;
+}
+
+export interface Mt5Order {
+  id: string;
+  licenseId: string;
+  ticket: number;
+  symbol: string;
+  type: 'BUY_LIMIT' | 'SELL_LIMIT' | 'BUY_STOP' | 'SELL_STOP';
+  volume: number;
+  price: number;
+  sl: number;
+  tp: number;
+  state: string;
+  placedAt: string;
+}
+
+export interface Mt5Deal {
+  id: string;
+  licenseId: string;
+  ticket: number;
+  orderId: number;
+  symbol: string;
+  type: 'BUY' | 'SELL';
+  volume: number;
+  price: number;
+  profit: number;
+  commission: number;
+  swap: number;
+  executedAt: string;
+}
+
+export type ExecutionCommandType =
+  | 'VALIDATE_ACCOUNT'
+  | 'CONNECT_TERMINAL'
+  | 'SYNC_STATE'
+  | 'EMERGENCY_STOP'
+  | 'RESUME_TRADING'
+  | 'DISCONNECT_UNBIND';
+
+export interface ExecutionRequest {
+  id: string;
+  licenseId: string;
+  userId: string;
+  workerId?: string;
+  command: ExecutionCommandType;
+  payload: Record<string, any>;
+  status: 'queued' | 'in_progress' | 'completed' | 'failed';
+  attempts: number;
+  requestedAt: string;
+  processedAt?: string;
+}
+
+export interface ExecutionResult {
+  id: string;
+  requestId: string;
+  licenseId: string;
+  workerId: string;
+  command: string;
+  success: boolean;
+  returnCode: number;
+  resultData?: any;
+  errorMessage?: string;
+  executionTimeMs: number;
+  timestamp: string;
+}
+
+export interface AccountHeartbeat {
+  id: string;
+  licenseId: string;
+  mt5Login: string;
+  workerId: string;
+  status: 'online' | 'delayed' | 'offline';
+  latencyMs: number;
+  timestamp: string;
+}
+
+export interface BrokerServerConfig {
+  id: string;
+  brokerName: ApprovedBrokerName;
+  serverName: string;
+  isLive: boolean;
+  goldSymbol: string;
+  minDepositUSD: number;
+  leverageCap: number;
+  status: 'active' | 'deprecated';
+}
+
+export interface SymbolMapping {
+  id: string;
+  brokerName: ApprovedBrokerName;
+  standardSymbol: 'XAUUSD';
+  brokerSymbol: string;
+  contractSize: number;
+  digits: number;
+  minLot: number;
+  maxLot: number;
+  lotStep: number;
+  isVerified: boolean;
+}
+
+export interface RiskPolicy {
+  id: string;
+  planId: string;
+  maxLot: number;
+  riskPercent: number;
+  hardStopLossRequired: boolean;
+  maxDailyLossPct: number;
+  maxDrawdownPct: number;
+  weekendHoldingAllowed: boolean;
+  newsTradingAllowed: boolean;
+}
+
+export interface AutomationEvent {
+  id: string;
+  licenseId: string;
+  eventType: 'EMERGENCY_HALT' | 'RESUMED' | 'SYMBOL_DRIFT' | 'MARGIN_WARNING' | 'CONNECTION_DROP' | 'WORKER_FAILOVER';
+  severity: 'info' | 'warning' | 'critical';
+  details: string;
+  actor: string;
+  timestamp: string;
+}
+
+export interface CredentialReference {
+  id: string;
+  licenseId: string;
+  userId: string;
+  mt5Login: string;
   brokerServer: string;
-  accountType: string;
-  boundAt: string;
-  status: 'active' | 'unbinding_requested' | 'unbound';
+  secretManagerUri: string;
+  keyVersion: string;
+  encryptedEnvelope: string;
+  iv: string;
+  authTag: string;
+  createdAt: string;
+  lastRotatedAt: string;
+}
+
+export interface BindingAuditLog {
+  id: string;
+  licenseId: string;
+  userId: string;
+  actorUid: string;
+  actorRole: string;
+  action:
+    | 'BINDING_INITIATED'
+    | 'CREDENTIALS_ENCRYPTED'
+    | 'WORKER_DISPATCHED'
+    | 'BROKER_AUTHENTICATION_VERIFIED'
+    | 'EMERGENCY_STOP_TRIGGERED'
+    | 'TRADING_RESUMED'
+    | 'UNBINDING_REQUESTED'
+    | 'UNBINDING_EXECUTED';
+  details: string;
+  ipAddress: string;
+  status: 'SUCCESS' | 'FAILED' | 'REJECTED';
+  timestamp: string;
 }
 
 export interface UnbindingRequest {

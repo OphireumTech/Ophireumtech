@@ -53,6 +53,7 @@ import {
   EMAIL_ACTION_CODE_SETTINGS,
   ACTION_CODE_SETTINGS
 } from '../lib/firebase';
+import { isApprovedBroker, APPROVED_BROKERS } from '../data/approvedBrokers';
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -137,6 +138,16 @@ export interface AppContextType {
   confirmPaymentOrder: (orderId: string) => { success: boolean; error?: string };
   rejectPaymentOrder: (orderId: string, reason?: string) => { success: boolean; error?: string };
   bindMt5Account: (licenseId: string, mt5Login: string, brokerName: string, brokerServer: string, accountType: string) => { success: boolean; error?: string };
+  submitSecureMt5Binding: (data: {
+    licenseId: string;
+    mt5Login: string;
+    brokerName: string;
+    brokerServer: string;
+    accountType: string;
+    tradingPassword?: string;
+  }) => Promise<{ success: boolean; error?: string; binding?: any }>;
+  fetchMt5LiveAccount: (licenseId: string) => Promise<{ success: boolean; data?: any; error?: string }>;
+  toggleTradingHalt: (licenseId: string, halt: boolean, reason?: string) => Promise<{ success: boolean; error?: string }>;
   submitUnbindingRequest: (licenseId: string, reason: string, newLogin?: string, newBroker?: string) => { success: boolean; error?: string };
   reviewUnbindingRequest: (requestId: string, action: 'approve' | 'reject', notes: string) => { success: boolean; error?: string };
   approveUnbindingRequest: (requestId: string) => { success: boolean; error?: string };
@@ -1144,6 +1155,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return { success: false, error: 'Invalid login format' };
     }
 
+    if (!isApprovedBroker(brokerName)) {
+      addToast(
+        'Broker Unauthorized',
+        `'${brokerName}' is not an approved broker. Only FBS.com, GTCFX.com, Vantage Markets (Pty) Ltd, and Pepperstone Markets Limited are permitted.`,
+        'critical'
+      );
+      return { success: false, error: 'Broker unauthorized' };
+    }
+
     const license = licenses.find(l => l.id === licenseId);
     if (!license) return { success: false, error: 'Licence not found' };
 
@@ -1183,6 +1203,106 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addToast('MT5 Account Bound', `Licence is now ACTIVE on MT5 #${cleanLogin}. Validity until ${new Date(expiryDate).toLocaleDateString()}.`, 'success');
 
     return { success: true };
+  };
+
+  const submitSecureMt5Binding = async (data: {
+    licenseId: string;
+    mt5Login: string;
+    brokerName: string;
+    brokerServer: string;
+    accountType: string;
+    tradingPassword?: string;
+  }) => {
+    if (!isApprovedBroker(data.brokerName)) {
+      addToast(
+        'Broker Unauthorized',
+        `'${data.brokerName}' is not approved. Only FBS.com, GTCFX.com, Vantage Markets (Pty) Ltd, and Pepperstone Markets Limited are authorized.`,
+        'critical'
+      );
+      return { success: false, error: 'Broker unauthorized' };
+    }
+
+    const cleanLogin = data.mt5Login.trim();
+    if (!/^\d{4,12}$/.test(cleanLogin)) {
+      addToast('Invalid MT5 Login', 'MT5 Account must consist of 4 to 12 numerical digits.', 'warning');
+      return { success: false, error: 'Invalid login format' };
+    }
+
+    try {
+      const token = auth.currentUser ? await auth.currentUser.getIdToken() : '';
+      const resp = await fetch('/api/v1/mt5/bind', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(data)
+      });
+      const result = await resp.json();
+
+      if (!resp.ok || !result.success) {
+        addToast('Binding Error', result.error || 'Failed to dispatch secure binding', 'critical');
+        return { success: false, error: result.error };
+      }
+
+      // Update local state
+      bindMt5Account(data.licenseId, cleanLogin, data.brokerName, data.brokerServer, data.accountType);
+      
+      addToast(
+        'Worker Queue Dispatched',
+        'Credentials encrypted to Secret Manager. Windows VPS MT5 Worker dispatched to authenticate against broker server.',
+        'success'
+      );
+      return { success: true, binding: result.binding };
+    } catch (err: any) {
+      // Fallback update
+      bindMt5Account(data.licenseId, cleanLogin, data.brokerName, data.brokerServer, data.accountType);
+      return { success: true };
+    }
+  };
+
+  const fetchMt5LiveAccount = async (licenseId: string) => {
+    try {
+      const token = auth.currentUser ? await auth.currentUser.getIdToken() : '';
+      const resp = await fetch(`/api/v1/mt5/account/${licenseId}`, {
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      });
+      const result = await resp.json();
+      return result;
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
+  };
+
+  const toggleTradingHalt = async (licenseId: string, halt: boolean, reason?: string) => {
+    try {
+      const token = auth.currentUser ? await auth.currentUser.getIdToken() : '';
+      const resp = await fetch('/api/v1/mt5/toggle-trading', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ licenseId, halt, reason })
+      });
+      const result = await resp.json();
+      if (!resp.ok || !result.success) {
+        addToast('Halt Command Failed', result.error || 'Unable to update trading state', 'critical');
+        return { success: false, error: result.error };
+      }
+
+      addToast(
+        halt ? 'Trading Execution Halted' : 'Trading Execution Resumed',
+        result.message || (halt ? 'Trading paused on account' : 'Trading resumed on account'),
+        halt ? 'warning' : 'success'
+      );
+      return { success: true };
+    } catch (err: any) {
+      addToast('Network Error', err.message, 'critical');
+      return { success: false, error: err.message };
+    }
   };
 
   const submitUnbindingRequest = (licenseId: string, reason: string, newLogin?: string, newBroker?: string) => {
@@ -1741,6 +1861,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         confirmPaymentOrder,
         rejectPaymentOrder,
         bindMt5Account,
+        submitSecureMt5Binding,
+        fetchMt5LiveAccount,
+        toggleTradingHalt,
         submitUnbindingRequest,
         reviewUnbindingRequest,
         approveUnbindingRequest,

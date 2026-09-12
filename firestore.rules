@@ -210,6 +210,104 @@ service cloud.firestore {
       allow write: if isAuth();
     }
 
+    // 17. MT5 Production Architecture Collections
+    // A. Credential References: ZERO CLIENT ACCESS (Never exposed to browser or client SDK)
+    match /credentialReferences/{credentialId} {
+      allow read, write: if false;
+    }
+
+    // B. MT5 Bindings
+    match /mt5Bindings/{bindingId} {
+      allow read: if (isAuth() && resource.data.userId == request.auth.uid) || isLicenseAdmin();
+      allow create: if isAuth() && 
+        request.resource.data.userId == request.auth.uid &&
+        (request.resource.data.brokerName in ['FBS.com', 'GTCFX.com', 'Vantage Markets (Pty) Ltd', 'Pepperstone Markets Limited']);
+      allow update: if isLicenseAdmin() || (
+        isAuth() && 
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.userId == resource.data.userId
+      );
+      allow delete: if isSuperAdmin();
+    }
+
+    // C. MT5 Workers (Windows VPS Execution Workers)
+    match /mt5Workers/{workerId} {
+      allow read: if isAuth();
+      allow write: if isLicenseAdmin();
+    }
+
+    // D. MT5 Account Snapshots (Verified worker snapshots, read-only for customer)
+    match /mt5AccountSnapshots/{snapshotId} {
+      allow read: if (isAuth() && resource.data.userId == request.auth.uid) || isStaff();
+      allow write: if isLicenseAdmin();
+    }
+
+    // E. MT5 Live Positions, Orders, and Deals (Read-only for customer)
+    match /mt5Positions/{positionId} {
+      allow read: if (isAuth() && resource.data.userId == request.auth.uid) || isStaff();
+      allow write: if isLicenseAdmin();
+    }
+
+    match /mt5Orders/{orderId} {
+      allow read: if (isAuth() && resource.data.userId == request.auth.uid) || isStaff();
+      allow write: if isLicenseAdmin();
+    }
+
+    match /mt5Deals/{dealId} {
+      allow read: if (isAuth() && resource.data.userId == request.auth.uid) || isStaff();
+      allow write: if isLicenseAdmin();
+    }
+
+    // F. Execution Requests (Encrypted command queue items)
+    match /executionRequests/{requestId} {
+      allow read: if (isAuth() && resource.data.userId == request.auth.uid) || isLicenseAdmin();
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+      allow update: if isLicenseAdmin();
+      allow delete: if isSuperAdmin();
+    }
+
+    // G. Execution Results
+    match /executionResults/{resultId} {
+      allow read: if isAuth();
+      allow write: if isLicenseAdmin();
+    }
+
+    // H. Account Heartbeats
+    match /accountHeartbeats/{heartbeatId} {
+      allow read: if isAuth();
+      allow write: if isLicenseAdmin();
+    }
+
+    // I. Broker Servers & Symbol Mappings (Public read, Super Admin write)
+    match /brokerServers/{serverId} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
+    match /symbolMappings/{mappingId} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
+    // J. Risk Policies
+    match /riskPolicies/{policyId} {
+      allow read: if isAuth();
+      allow write: if isSuperAdmin();
+    }
+
+    // K. Automation Events
+    match /automationEvents/{eventId} {
+      allow read: if isAuth();
+      allow write: if isLicenseAdmin();
+    }
+
+    // L. Binding Audit Logs (Strictly immutable, owner & super admin read)
+    match /bindingAuditLogs/{logId} {
+      allow read: if isSuperAdmin() || (isAuth() && resource.data.userId == request.auth.uid);
+      allow create: if isAuth();
+      allow update, delete: if false;
+    }
+
     // Default Deny
     match /{document=**} {
       allow read, write: if false;

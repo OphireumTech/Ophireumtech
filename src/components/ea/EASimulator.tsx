@@ -50,8 +50,8 @@ export const EASimulator: React.FC = () => {
   // Simulator test parameters
   const [testLicenseId, setTestLicenseId] = useState(activeLicense?.id || 'OPH-TEST-SIMULATOR-XAU');
   const [testAccountNumber, setTestAccountNumber] = useState(activeLicense?.boundMt5Account || '8849102');
-  const [testBroker, setTestBroker] = useState(activeLicense?.brokerName || 'IC Markets (SC)');
-  const [testServer, setTestServer] = useState(activeLicense?.brokerServer || 'ICMarketsSC-Live04');
+  const [testBroker, setTestBroker] = useState(activeLicense?.brokerName || 'FBS.com');
+  const [testServer, setTestServer] = useState(activeLicense?.brokerServer || 'FBS-Real');
   const [testSymbol, setTestSymbol] = useState('XAUUSD');
   const [testEaVersion, setTestEaVersion] = useState('2.4.1');
   const [simulateReplay, setSimulateReplay] = useState(false);
