@@ -280,9 +280,14 @@ export const CompanyPages: React.FC<CompanyPageProps> = ({ section }) => {
                   <div className="flex items-start gap-3">
                     <MessageSquare className="w-4 h-4 text-[#C9A227] shrink-0 mt-0.5" />
                     <div>
-                      <div className="text-zinc-400">WhatsApp / Telephone Support</div>
-                      <a href="https://wa.me/639957151043" target="_blank" rel="noreferrer" className="text-zinc-100 hover:text-[#E4C765] font-medium">
-                        {settings.supportWhatsApp}
+                      <div className="text-zinc-400">WhatsApp Support</div>
+                      <a
+                        href="https://wa.me/639957151043?text=Hello%20Ophireum%2C%20I%20would%20like%20to%20inquire%20about%20the%20Ophireum%20Expert%20Assistant."
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-zinc-100 hover:text-[#E4C765] font-medium"
+                      >
+                        WhatsApp: +63 995 715 1043
                       </a>
                     </div>
                   </div>

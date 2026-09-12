@@ -49,7 +49,7 @@ export const Footer: React.FC = () => {
               </div>
               <div className="flex items-center gap-2">
                 <MessageSquare className="w-3.5 h-3.5 text-[#C9A227]" />
-                <span>WhatsApp / Tel Desk: <a href="https://wa.me/639957151043" target="_blank" rel="noreferrer" className="text-zinc-200 hover:text-[#E4C765]">{settings.supportWhatsApp}</a></span>
+                <span>WhatsApp: <a href="https://wa.me/639957151043?text=Hello%20Ophireum%2C%20I%20would%20like%20to%20inquire%20about%20the%20Ophireum%20Expert%20Assistant." target="_blank" rel="noopener noreferrer" className="text-zinc-200 hover:text-[#E4C765]">+63 995 715 1043</a></span>
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="w-3.5 h-3.5 text-[#C9A227]" />
