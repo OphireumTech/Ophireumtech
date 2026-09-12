@@ -13,6 +13,7 @@ import {
   sendPasswordResetEmail,
   sendEmailVerification,
   onAuthStateChanged,
+  ActionCodeSettings,
   User as FirebaseUser
 } from 'firebase/auth';
 import {
@@ -106,17 +107,20 @@ export async function testFirestoreConnection(): Promise<boolean> {
 export { serverTimestamp, Timestamp };
 
 /**
- * Standard ActionCodeSettings for OPHIREUM email verification dispatch.
- * Directs user to the login route upon clicking email confirmation.
+ * Production ActionCodeSettings for OPHIREUM email verification dispatch.
+ * Continues to https://ophireum.biz/?emailVerified=1 upon email link click.
  */
-export const EMAIL_ACTION_CODE_SETTINGS = {
-  url: typeof window !== 'undefined' && window.location.origin ? `${window.location.origin}/#/login` : 'https://ophireum.biz/#/login',
+export const ACTION_CODE_SETTINGS: ActionCodeSettings = {
+  url: 'https://ophireum.biz/?emailVerified=1',
   handleCodeInApp: false
 };
 
+// Backwards compatibility alias
+export const EMAIL_ACTION_CODE_SETTINGS = ACTION_CODE_SETTINGS;
+
 /**
  * Safe Firebase Authentication error message formatter.
- * Maps Firebase Auth error codes to user-friendly messages.
+ * Maps Firebase Auth error codes to user-friendly, actionable messages.
  * Never exposes internal configurations, stack traces, API keys, or database IDs.
  */
 export function formatAuthError(error: any): string {
@@ -129,35 +133,38 @@ export function formatAuthError(error: any): string {
 
   switch (code) {
     case 'auth/operation-not-allowed':
-      return 'Email/password registration is not enabled. Please contact support.';
+      return 'Email/password registration is not enabled in Firebase Authentication. Please enable Email/Password under Sign-in method in Firebase Console.';
     case 'auth/email-already-in-use':
-      return 'An account already exists for this email. Please log in or reset your password.';
+      return 'An account is already registered with this email address. Please log in or use password recovery.';
     case 'auth/invalid-email':
       return 'Please enter a valid email address.';
     case 'auth/weak-password':
-      return 'Please use a stronger password.';
+      return 'Password must contain at least 6 characters.';
     case 'auth/network-request-failed':
-      return 'Network error. Check your connection and try again.';
+      return 'Network connection error. Check your internet connection and try again.';
     case 'auth/too-many-requests':
-      return 'Too many attempts. Please wait before trying again.';
+      return 'Too many verification requests. Firebase rate limits verification emails to prevent abuse. Please wait 60 seconds before requesting another link.';
     case 'auth/user-token-expired':
-      return 'Your security session has expired. Please sign in again.';
+      return 'Your security session has expired. Please sign in again to verify your email.';
     case 'auth/invalid-continue-uri':
-      return 'Invalid continuation link. Please contact support.';
+      return 'The continuation URL provided in ActionCodeSettings is invalid. Please contact Ophireum support.';
     case 'auth/unauthorized-continue-uri':
-      return 'The continuation domain is not authorized in Firebase Console. Please verify authorized domains.';
+      return 'The domain "ophireum.biz" is not yet allowlisted in Firebase Console → Authentication → Settings → Authorized domains. Please add ophireum.biz to authorized domains in Firebase Console.';
     case 'auth/missing-continue-uri':
-      return 'A continuation link is missing. Please contact support.';
+      return 'A continuation link is missing from the verification request. Please contact support.';
     case 'auth/user-not-found':
+      return 'No account was found matching this email address.';
     case 'auth/wrong-password':
     case 'auth/invalid-credential':
       return 'Invalid email or password. Please verify your credentials.';
     case 'auth/user-disabled':
-      return 'This account has been disabled. Please contact support.';
+      return 'This account has been disabled by administrative security policy. Please contact Ophireum support.';
     case 'auth/requires-recent-login':
-      return 'Please sign in again to complete this sensitive operation.';
+      return 'Please sign in again to complete this sensitive verification action.';
+    case 'auth/internal-error':
+      return 'Firebase encountered an internal error. Please wait a moment and try again.';
     default:
-      return 'An unexpected error occurred during authentication. Please try again.';
+      return error?.message || 'An unexpected error occurred during authentication. Please try again.';
   }
 }
 

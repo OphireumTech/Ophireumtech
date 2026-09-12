@@ -18,13 +18,15 @@ interface AuthPagesProps {
 export const AuthPages: React.FC<AuthPagesProps> = ({ view }) => {
   const {
     login,
+    logout,
     registerUser,
     setCurrentRoute,
     addToast,
     sendPasswordReset,
     sendVerificationEmail,
     checkVerificationStatus,
-    currentUser
+    currentUser,
+    verificationStatus
   } = useApp();
 
   const [email, setEmail] = useState('');
@@ -77,7 +79,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ view }) => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanName = fullName.trim();
-    const cleanEmail = email.trim();
+    const cleanEmail = email.trim().toLowerCase();
 
     if (!cleanName) {
       addToast('Full Name Required', 'Please enter your full legal name.', 'warning');
@@ -419,12 +421,43 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ view }) => {
             <div className="space-y-1.5">
               <h2 className="text-base font-bold text-white">Email Verification Required</h2>
               <p className="text-zinc-400 text-xs leading-relaxed max-w-sm mx-auto">
-                We sent a secure verification link to your registered email address. Please click the link to activate your institutional access.
+                A verification link has been requested for your registered account. Please click the link to confirm ownership and activate institutional features.
               </p>
               <div className="inline-block px-3 py-1 rounded-lg bg-[#0F131D] border border-[#232A3E] font-mono font-semibold text-[#E4C765] text-xs mt-1">
                 {auth.currentUser?.email || currentUser?.email || 'your registered email'}
               </div>
             </div>
+
+            {/* Delivery Status Feedback */}
+            {verificationStatus?.initialSendSuccess ? (
+              <div className="p-3 rounded-xl bg-[#0F2218] border border-emerald-500/30 text-emerald-300 text-left text-xs space-y-1">
+                <div className="flex items-center gap-1.5 font-semibold text-emerald-200">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>Verification Request Submitted</span>
+                </div>
+                <p className="text-[11px] text-emerald-300/90 leading-relaxed">
+                  Verification email requested successfully. Check your inbox, Spam, Junk, Promotions, and All Mail folders. Delivery may take a few minutes.
+                </p>
+              </div>
+            ) : verificationStatus?.initialSendAttempted && !verificationStatus?.initialSendSuccess ? (
+              <div className="p-3 rounded-xl bg-[#241315] border border-rose-500/30 text-rose-300 text-left text-xs space-y-1">
+                <div className="flex items-center gap-1.5 font-semibold text-rose-200">
+                  <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                  <span>Email Dispatch Notice</span>
+                </div>
+                <p className="text-[11px] text-rose-300/90 leading-relaxed">
+                  {verificationStatus.lastError === 'auth/unauthorized-continue-uri' ? (
+                    <>
+                      The domain <strong className="text-amber-300">ophireum.biz</strong> must be added to Authorized Domains in Firebase Console → Authentication → Settings → Authorized domains.
+                    </>
+                  ) : verificationStatus.lastError === 'auth/too-many-requests' ? (
+                    'Firebase rate limits verification emails to prevent abuse. Please wait 60 seconds before requesting another link.'
+                  ) : (
+                    'Initial verification email could not be sent. Please check project settings or click Resend Verification Email below.'
+                  )}
+                </p>
+              </div>
+            ) : null}
 
             {/* Verification Instructions Callout */}
             <div className="p-3 rounded-xl bg-[#0C0F17] border border-[#1E2433] text-left text-zinc-400 space-y-1.5 text-[11px]">
@@ -433,9 +466,9 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ view }) => {
                 <span>Verification Checklist:</span>
               </div>
               <ul className="list-disc list-inside space-y-1 pl-1 text-zinc-400">
-                <li>Check your inbox and <strong className="text-zinc-300">spam/junk folder</strong>.</li>
-                <li>Click the link in the email to verify with Firebase Auth.</li>
-                <li>Return here and click <strong className="text-zinc-300">Check Verification Status</strong>.</li>
+                <li>Check your inbox and <strong className="text-zinc-300">Spam, Junk, and Promotions</strong> folders.</li>
+                <li>Click the secure verification link in the email.</li>
+                <li>Return here and click <strong className="text-zinc-300">Check Verification Status</strong> to unlock your account.</li>
               </ul>
             </div>
 
@@ -471,7 +504,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ view }) => {
                 {isResending ? (
                   <>
                     <RefreshCw className="w-4 h-4 animate-spin text-[#C9A227]" />
-                    <span>Dispatched Link...</span>
+                    <span>Dispatching Link...</span>
                   </>
                 ) : resendCooldown > 0 ? (
                   <>
@@ -484,6 +517,20 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ view }) => {
                     <span>Resend Verification Email</span>
                   </>
                 )}
+              </button>
+            </div>
+
+            {/* Email Correction / Recovery Path */}
+            <div className="pt-1 text-center">
+              <button
+                type="button"
+                onClick={async () => {
+                  await logout();
+                  setCurrentRoute('register');
+                }}
+                className="text-[11px] text-zinc-400 hover:text-[#E4C765] transition-colors underline cursor-pointer"
+              >
+                Registered with the wrong email? Register again with correct email
               </button>
             </div>
           </div>

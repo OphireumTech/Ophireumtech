@@ -200,7 +200,48 @@ const SuperAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) 
 };
 
 const AppContent: React.FC = () => {
-  const { settings } = useApp();
+  const { settings, addToast, setCurrentRoute } = useApp();
+
+  // Handle email verification callback URL parameter: https://ophireum.biz/?emailVerified=1
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('emailVerified') === '1') {
+      const handleEmailVerifiedArrival = async () => {
+        const user = auth.currentUser;
+        if (user) {
+          try {
+            await user.reload();
+            if (user.emailVerified) {
+              await user.getIdToken(true);
+              addToast(
+                'Email Verified',
+                'Your email address has been successfully verified with Firebase Authentication. Welcome to OPHIREUM!',
+                'success'
+              );
+              setCurrentRoute('dashboard');
+            }
+          } catch (err) {
+            console.warn('[OPHIREUM] Email verification arrival check error:', err);
+          }
+        } else {
+          addToast(
+            'Email Confirmed',
+            'Verification link detected. Please log in to access your institutional account.',
+            'info'
+          );
+        }
+
+        // Clean query parameter from browser address bar cleanly
+        try {
+          const cleanUrl = window.location.pathname + window.location.hash;
+          window.history.replaceState({}, document.title, cleanUrl);
+        } catch {}
+      };
+
+      handleEmailVerifiedArrival();
+    }
+  }, [addToast, setCurrentRoute]);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#08090B] text-zinc-100 selection:bg-[#C9A227] selection:text-black font-sans">

@@ -50,7 +50,8 @@ import {
   testFirestoreConnection,
   formatAuthError,
   serverTimestamp,
-  EMAIL_ACTION_CODE_SETTINGS
+  EMAIL_ACTION_CODE_SETTINGS,
+  ACTION_CODE_SETTINGS
 } from '../lib/firebase';
 import {
   signInWithEmailAndPassword,
@@ -103,6 +104,12 @@ export interface AppContextType {
   checkVerificationStatus: () => Promise<boolean>;
   acceptEmailVerified: () => Promise<boolean>;
   updateProfileInfo: (info: { phone?: string; country?: string; timezone?: string; fullName?: string }) => Promise<{ success: boolean; error?: string }>;
+  verificationStatus: {
+    lastSentAt: number | null;
+    initialSendAttempted: boolean;
+    initialSendSuccess: boolean;
+    lastError: string | null;
+  };
 
   // Data Collections
   plans: LicensePlan[];
@@ -215,6 +222,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isFirebaseConnected, setIsFirebaseConnected] = useState<boolean>(false);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [usedNonces, setUsedNonces] = useState<Set<string>>(new Set(['test-consumed-nonce']));
+  const [verificationStatus, setVerificationStatus] = useState<{
+    lastSentAt: number | null;
+    initialSendAttempted: boolean;
+    initialSendSuccess: boolean;
+    lastError: string | null;
+  }>({
+    lastSentAt: null,
+    initialSendAttempted: false,
+    initialSendSuccess: false,
+    lastError: null
+  });
 
   // Toast System
   const addToast = useCallback((title: string, message: string, type: ToastItem['type'] = 'info') => {
@@ -571,18 +589,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await setDoc(userDocRef, safeUserData);
       await setDoc(profileDocRef, safeProfileData);
 
-      // Immediately send Firebase verification email using the authenticated user and ActionCodeSettings
+      // Immediately send Firebase verification email using the authenticated user and production ActionCodeSettings
       let emailSent = false;
       let emailSendError: any = null;
       try {
-        await sendEmailVerification(userCred.user, {
-          url: typeof window !== 'undefined' && window.location.origin ? `${window.location.origin}/#/login` : 'https://ophireum.biz/#/login',
-          handleCodeInApp: false
-        });
+        if (!userCred?.user) {
+          throw new Error('Firebase Authentication returned empty user credential.');
+        }
+        await sendEmailVerification(userCred.user, ACTION_CODE_SETTINGS);
         emailSent = true;
+        setVerificationStatus({
+          lastSentAt: Date.now(),
+          initialSendAttempted: true,
+          initialSendSuccess: true,
+          lastError: null
+        });
+        console.info('[OPHIREUM Auth] Initial verification email dispatched via Firebase to:', cleanEmail);
       } catch (emailErr: any) {
         emailSendError = emailErr;
-        console.warn('[OPHIREUM Auth Debug] Initial verification send error code:', emailErr?.code || emailErr?.message || 'unknown');
+        const errCode = emailErr?.code || 'unknown';
+        console.warn('[OPHIREUM Auth Debug] Initial verification send error code:', errCode);
+        setVerificationStatus({
+          lastSentAt: null,
+          initialSendAttempted: true,
+          initialSendSuccess: false,
+          lastError: errCode
+        });
       }
 
       const clientProfile: UserProfile = {
@@ -603,18 +635,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setCurrentRoute('verify-email');
 
       if (emailSent) {
-        // Requirement 1: Show this message only after sendEmailVerification() succeeds
+        // Requirement 4 & 11: Display success only after awaited Firebase promise succeeds
         addToast(
           'Account Created',
-          'Account created. We sent a verification link to your email. Please check your inbox and spam folder.',
+          'Verification email requested successfully. Check your inbox, Spam, Junk, Promotions, and All Mail folders. Delivery may take a few minutes.',
           'success'
         );
       } else {
-        // Requirement 2: If account creation succeeds but email sending fails, show actual safe Firebase error
+        // Requirement 4 & 7: Do not claim email was sent if Firebase returned an error
         const safeError = formatAuthError(emailSendError);
         addToast(
           'Email Delivery Notice',
-          `Account created, but verification email could not be sent: ${safeError}. Please click Resend Verification Email below.`,
+          `Account created, but verification email could not be dispatched: ${safeError}`,
           'warning'
         );
       }
@@ -694,15 +726,48 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const sendVerificationEmail = async (): Promise<boolean> => {
     const user = auth.currentUser;
     if (!user) {
-      addToast('Authentication Required', 'Please log in to request a verification email.', 'warning');
+      addToast('Authentication Required', 'Please log in to your account to request a verification email.', 'warning');
+      setCurrentRoute('login');
       return false;
     }
 
     try {
-      await sendEmailVerification(user, EMAIL_ACTION_CODE_SETTINGS);
+      // 1. Authoritative reload to verify if user already completed verification
+      await user.reload();
+      if (user.emailVerified) {
+        await user.getIdToken(true);
+        try {
+          await setDoc(doc(db, COLLECTIONS.users, user.uid), {
+            isEmailVerified: true,
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        } catch (dbErr) {
+          console.warn('[OPHIREUM] Firestore update note:', dbErr);
+        }
+
+        setCurrentUser(prev => ({
+          ...prev,
+          isEmailVerified: true,
+          updatedAt: new Date().toISOString()
+        }));
+
+        addToast('Already Verified', 'Your email address is already verified. Redirecting to your dashboard...', 'success');
+        setCurrentRoute('dashboard');
+        return true;
+      }
+
+      // 2. Dispatch verification email with production ActionCodeSettings
+      await sendEmailVerification(user, ACTION_CODE_SETTINGS);
+      setVerificationStatus({
+        lastSentAt: Date.now(),
+        initialSendAttempted: true,
+        initialSendSuccess: true,
+        lastError: null
+      });
+
       addToast(
         'Verification Dispatched',
-        `A verification link has been sent to ${user.email}. Please check your inbox and spam folder.`,
+        'Verification email requested successfully. Check your inbox, Spam, Junk, Promotions, and All Mail folders. Delivery may take a few minutes.',
         'success'
       );
       recordAudit('EMAIL_VERIFICATION_SENT', 'USER', user.uid, undefined, user.email || '', 'Verification email dispatched');
@@ -710,8 +775,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (err: any) {
       const code = err?.code || '';
       console.warn('[OPHIREUM Auth Debug] Resend verification error code:', code);
+      setVerificationStatus(prev => ({
+        ...prev,
+        lastError: code
+      }));
       const safeError = formatAuthError(err);
-      addToast('Verification Request', safeError, 'critical');
+      addToast('Verification Request Failed', safeError, 'critical');
       return false;
     }
   };
@@ -720,13 +789,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const user = auth.currentUser;
     if (!user) {
       addToast('Authentication Required', 'Please log in to check your verification status.', 'warning');
+      setCurrentRoute('login');
       return false;
     }
 
     try {
+      // 1. Authoritative reload from Firebase Auth
       await user.reload();
+
+      // 2. Authoritative check
       if (user.emailVerified) {
-        // Update the Firestore profile and continue to dashboard
+        // 3. Force refresh ID token
+        await user.getIdToken(true);
+
         try {
           await setDoc(doc(db, COLLECTIONS.users, user.uid), {
             isEmailVerified: true,
@@ -744,11 +819,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         addToast('Email Verified', 'Your email address has been verified. Welcome to OPHIREUM!', 'success');
         recordAudit('EMAIL_VERIFIED', 'USER', user.uid, 'false', 'true', 'Firebase authoritative verification confirmed');
-        setCurrentRoute('dashboard');
+
+        // Direct to appropriate dashboard depending on role
+        if (['super_admin', 'license_admin', 'finance_reviewer', 'support_agent'].includes(currentRole)) {
+          if (currentRole === 'super_admin') setCurrentRoute('admin');
+          else if (currentRole === 'license_admin') setCurrentRoute('license-dashboard');
+          else if (currentRole === 'finance_reviewer') setCurrentRoute('finance-dashboard');
+          else setCurrentRoute('support-dashboard');
+        } else {
+          setCurrentRoute('dashboard');
+        }
         return true;
       } else {
-        // Tell the user that the email is still unverified
-        addToast('Still Unverified', 'Your email address is still unverified. Please check your inbox and spam folder, click the verification link, and try again.', 'warning');
+        // Tell the user without creating a loop
+        addToast(
+          'Email Not Verified Yet',
+          'Your email address is still unverified. Please check your inbox and spam folder, click the verification link, and try again.',
+          'warning'
+        );
         return false;
       }
     } catch (err: any) {
@@ -1673,7 +1761,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         markNotificationRead,
         addToast,
         toasts,
-        removeToast
+        removeToast,
+        verificationStatus
       }}
     >
       {children}
