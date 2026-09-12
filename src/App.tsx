@@ -24,7 +24,7 @@ import { LicenseDashboard } from './components/staff/LicenseDashboard';
 import { EASimulator } from './components/ea/EASimulator';
 import { NotFoundPage } from './components/common/NotFoundPage';
 import { AccessDeniedPage } from './components/common/AccessDeniedPage';
-import { FloatingWhatsAppButton } from './components/common/FloatingWhatsAppButton';
+import { ContactAssistant } from './components/common/ContactAssistant';
 import { AlertTriangle, CheckCircle2, Info, X } from 'lucide-react';
 import { auth } from './lib/firebase';
 
@@ -472,8 +472,8 @@ const AppContent: React.FC = () => {
       {/* Institutional Legal Footer */}
       <Footer />
 
-      {/* Floating WhatsApp Action Button for Public Pages */}
-      <FloatingWhatsAppButton />
+      {/* Institutional Contact Assistant for Public Pages (Black & Gold) */}
+      <ContactAssistant />
 
       {/* Dynamic Toast Layer */}
       <ToastContainer />

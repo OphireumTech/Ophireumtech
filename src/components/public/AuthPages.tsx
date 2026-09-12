@@ -171,19 +171,19 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ view }) => {
   };
 
   return (
-    <div className="max-w-md mx-auto px-4 py-16 space-y-8">
+    <div className="max-w-md mx-auto px-4 pt-10 pb-20 sm:pt-14 sm:pb-24 space-y-8 relative z-10">
       {/* Brand Header */}
       <div className="text-center space-y-3 flex flex-col items-center">
         <BrandLogo size="lg" to="/home" onClick={() => setCurrentRoute('home')} />
         <h1 className="text-2xl font-display font-bold text-white pt-1">
           {view === 'login' && 'Institutional Client Access'}
-          {view === 'register' && 'Deploy OPHIREUM Account'}
+          {view === 'register' && 'Create Your Account'}
           {view === 'forgot-password' && 'Password Recovery'}
           {view === 'verify-email' && 'Verify Email Address'}
         </h1>
         <p className="text-xs text-zinc-400">
           {view === 'login' && 'Enter your credentials to manage MT5 licensing and accounts.'}
-          {view === 'register' && 'Deploy disciplined MT5 algorithmic execution.'}
+          {view === 'register' && 'Deploy disciplined MT5 algorithmic execution with OPHIREUM.'}
           {view === 'forgot-password' && 'Enter your email to receive a secure password recovery link.'}
           {view === 'verify-email' && 'Confirm your email address to unlock production activations.'}
         </p>
