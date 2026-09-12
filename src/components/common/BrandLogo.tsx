@@ -72,8 +72,8 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
     }
   }
 
-  // Base URL safe image path for GitHub Pages and Custom Domains
-  const logoSrc = `${import.meta.env.BASE_URL}images/ophireum-logo.png`;
+  // Root safe image path for Custom Domain and Vite
+  const logoSrc = '/images/ophireum-logo.png';
 
   const content = (
     <>

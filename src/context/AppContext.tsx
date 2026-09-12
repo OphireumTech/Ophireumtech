@@ -576,7 +576,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       let emailSendError: any = null;
       try {
         await sendEmailVerification(userCred.user, {
-          url: "https://ophireumtech.github.io/Ophireumtech/login",
+          url: typeof window !== 'undefined' && window.location.origin ? `${window.location.origin}/#/login` : 'https://ophireum.biz/#/login',
           handleCodeInApp: false
         });
         emailSent = true;

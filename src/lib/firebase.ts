@@ -88,15 +88,18 @@ export const COLLECTIONS = {
 export async function testFirestoreConnection(): Promise<boolean> {
   try {
     const testDocRef = doc(db, 'system_settings', 'global');
-    await getDocFromServer(testDocRef);
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Firebase connection check timed out')), 3500)
+    );
+    await Promise.race([getDocFromServer(testDocRef), timeoutPromise]);
     return true;
   } catch (error) {
     if (error instanceof Error && error.message.includes('the client is offline')) {
       console.warn('[OPHIREUM Firebase] Firestore client offline or database provisioning pending.');
       return false;
     }
-    // Missing document still proves connection succeeded
-    return true;
+    console.warn('[OPHIREUM Firebase] Offline or optional backend fallback active:', error);
+    return false;
   }
 }
 
@@ -107,7 +110,7 @@ export { serverTimestamp, Timestamp };
  * Directs user to the login route upon clicking email confirmation.
  */
 export const EMAIL_ACTION_CODE_SETTINGS = {
-  url: 'https://ophireumtech.github.io/Ophireumtech/login',
+  url: typeof window !== 'undefined' && window.location.origin ? `${window.location.origin}/#/login` : 'https://ophireum.biz/#/login',
   handleCodeInApp: false
 };
 

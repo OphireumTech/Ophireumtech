@@ -74,7 +74,7 @@ export const HomePage: React.FC = () => {
           {/* Institutional Badge */}
           <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-[#141822] border border-[#C9A227]/35 text-[#E4C765] text-xs font-medium shadow-md">
             <img
-              src={`${import.meta.env.BASE_URL}images/ophireum-logo.png`}
+              src="/images/ophireum-logo.png"
               alt="Ophireum"
               className="w-4 h-4 object-contain flex-shrink-0"
               style={{ filter: 'drop-shadow(0 0 1px rgba(255, 232, 160, 0.65))' }}
