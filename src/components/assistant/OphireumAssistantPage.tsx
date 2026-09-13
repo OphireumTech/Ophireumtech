@@ -11,6 +11,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
+import { auth } from '../../lib/firebase';
 import {
   AssistantMessage,
   AssistantConversation,
@@ -208,6 +209,54 @@ export const OphireumAssistantPage: React.FC = () => {
   const [economicEvents] = useState(getCuratedEconomicCalendar());
   const [sessionClocks] = useState(getMarketSessionStatus());
   const [currencyStrengths] = useState(calculateCurrencyStrength());
+  const [providerTelemetry, setProviderTelemetry] = useState<any>(null);
+
+  // Synchronize Authoritative Server Wallet
+  const fetchServerWallet = async () => {
+    if (!currentUser?.uid) return;
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch('/api/v1/assistant/wallet', {
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.wallet) {
+          setWallet(data.wallet);
+        }
+      }
+    } catch (e) {
+      console.warn('Wallet fetch error:', e);
+    }
+  };
+
+  const fetchMarketData = async () => {
+    try {
+      const res = await fetch('/api/v1/assistant/market-overview');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.quotes && data.quotes.length > 0) {
+          setMarketQuotes(data.quotes);
+        }
+        setProviderTelemetry({
+          provider: data.provider,
+          isLiveFeedConnected: data.isLiveFeedConnected,
+          status: data.status,
+          notice: data.notice,
+          requiredCredentials: data.requiredCredentials
+        });
+      }
+    } catch (e) {
+      console.warn('Market feed fetch error:', e);
+    }
+  };
+
+  useEffect(() => {
+    fetchServerWallet();
+    fetchMarketData();
+  }, [currentUser?.uid]);
 
   // Interactive Calculator State
   const [calcInputs, setCalcInputs] = useState({
@@ -419,8 +468,51 @@ export const OphireumAssistantPage: React.FC = () => {
     }
 
     const reader = new FileReader();
-    reader.onload = (uploadEvent) => {
+    reader.onload = async (uploadEvent) => {
       const dataUrl = uploadEvent.target?.result as string;
+
+      // Server-side security check if logged in
+      if (currentUser?.uid) {
+        try {
+          const token = await auth.currentUser?.getIdToken();
+          const res = await fetch('/api/v1/assistant/upload', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify({
+              filename: file.name,
+              fileData: dataUrl,
+              mimeType: file.type
+            })
+          });
+
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            addToast('Security Verification Rejected', err.message || 'File validation failed on server.', 'critical');
+            return;
+          }
+
+          const uploadData = await res.json();
+          const newFile: UploadedMarketFile = {
+            id: uploadData.file.id,
+            name: uploadData.file.name,
+            size: uploadData.file.size,
+            type: uploadData.file.type,
+            category: uploadData.file.category,
+            dataUrl,
+            uploadedAt: uploadData.file.uploadedAt
+          };
+          setAttachedFiles(prev => [...prev, newFile]);
+          addToast('File Verified & Attached', `${file.name} passed server magic-byte inspection.`, 'success');
+          return;
+        } catch (err: any) {
+          addToast('Upload Error', err.message || 'Error communicating with file validator.', 'warning');
+        }
+      }
+
+      // Guest / Fallback local attachment
       const newFile: UploadedMarketFile = {
         id: `file-${Date.now()}`,
         name: file.name,
@@ -461,7 +553,9 @@ export const OphireumAssistantPage: React.FC = () => {
     }
   };
 
-  // Text-To-Speech Playback
+  // Text-To-Speech Playback State
+  const [isSpeechPaused, setIsSpeechPaused] = useState(false);
+
   const handleToggleSpeakMessage = (msg: AssistantMessage) => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
       addToast('TTS Unavailable', 'Speech synthesis is not supported in this browser.', 'warning');
@@ -471,11 +565,13 @@ export const OphireumAssistantPage: React.FC = () => {
     if (playingMessageId === msg.id) {
       window.speechSynthesis.cancel();
       setPlayingMessageId(null);
+      setIsSpeechPaused(false);
       return;
     }
 
     window.speechSynthesis.cancel();
     setPlayingMessageId(msg.id);
+    setIsSpeechPaused(false);
 
     // Strip markdown formatting symbols for clean speech
     const cleanSpeech = msg.content
@@ -489,12 +585,28 @@ export const OphireumAssistantPage: React.FC = () => {
 
     utterance.onend = () => {
       setPlayingMessageId(null);
+      setIsSpeechPaused(false);
     };
     utterance.onerror = () => {
       setPlayingMessageId(null);
+      setIsSpeechPaused(false);
     };
 
     window.speechSynthesis.speak(utterance);
+  };
+
+  const handleToggleSpeechPause = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    if (isSpeechPaused) {
+      window.speechSynthesis.resume();
+      setIsSpeechPaused(false);
+      addToast('Audio Resumed', 'Speech synthesis continuing.', 'info');
+    } else {
+      window.speechSynthesis.pause();
+      setIsSpeechPaused(true);
+      addToast('Audio Paused', 'Speech synthesis paused.', 'info');
+    }
   };
 
   // Message Copy
@@ -539,6 +651,79 @@ export const OphireumAssistantPage: React.FC = () => {
       addToast('Error', 'Unable to record feedback right now.', 'warning');
     } finally {
       setFeedbackSubmitting(false);
+    }
+  };
+
+  // Plan Subscription Checkout Handler
+  const handleServerPlanCheckout = async (planId: string) => {
+    if (!currentUser?.uid) {
+      navigate('/register');
+      return;
+    }
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch('/api/v1/assistant/subscription/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ planId, paymentMethod: 'usdt' })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        if (data.wallet) {
+          setWallet(data.wallet);
+        }
+        addToast(
+          data.isTestMode ? 'Sandbox Checkout Confirmed' : 'Subscription Updated',
+          data.message || 'Plan subscription activated.',
+          'success'
+        );
+        setActiveDrawer('none');
+        fetchServerWallet();
+      } else {
+        throw new Error(data.message || 'Checkout failed');
+      }
+    } catch (err: any) {
+      addToast('Checkout Notice', err.message || 'Subscription checkout error.', 'warning');
+    }
+  };
+
+  // Credit Pack Purchase Handler
+  const handleCreditPackCheckout = async (creditAmount: number, usdtAmount: number) => {
+    if (!currentUser?.uid) {
+      navigate('/register');
+      return;
+    }
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch('/api/v1/assistant/subscription/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          planId: wallet.planId,
+          creditPack: creditAmount,
+          amountUSDT: usdtAmount,
+          paymentMethod: 'usdt'
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        fetchServerWallet();
+        addToast(
+          'Credits Top-Up Processed',
+          `Order verified for ${creditAmount} credits pack (${usdtAmount} USDT).`,
+          'success'
+        );
+      } else {
+        throw new Error(data.message || 'Purchase error');
+      }
+    } catch (err: any) {
+      addToast('Top-Up Notice', err.message || 'Payment processing error.', 'warning');
     }
   };
 
@@ -619,10 +804,13 @@ export const OphireumAssistantPage: React.FC = () => {
       base64Data: f.dataUrl || ''
     }));
 
+    const userToken = currentUser?.uid ? await auth.currentUser?.getIdToken() : undefined;
+
     await streamAssistantChat({
       message: userMessage.content,
       conversationHistory: historyForBackend,
       planId: wallet.planId,
+      authToken: userToken,
       files: filePayload,
       signal: controller.signal,
       onChunk: (chunk) => {
@@ -657,8 +845,10 @@ export const OphireumAssistantPage: React.FC = () => {
           };
         });
 
-        // Deduct credits transparently if user is registered
-        if (currentUser?.uid && result.creditsConsumed > 0) {
+        // Sync authoritative server balance
+        if (currentUser?.uid) {
+          fetchServerWallet();
+        } else if (result.creditsConsumed > 0) {
           setWallet(w => ({
             ...w,
             balance: Math.max(0, w.balance - result.creditsConsumed)
@@ -1283,28 +1473,39 @@ export const OphireumAssistantPage: React.FC = () => {
                         {/* Response Action Bar (TTS, Copy, Regenerate, Feedback) */}
                         <div className="pt-3 border-t border-inherit flex flex-wrap items-center justify-between text-xs text-zinc-400 gap-2">
                           <div className="flex items-center gap-2">
-                            {/* Text to Speech Button */}
-                            <button
-                              onClick={() => handleToggleSpeakMessage(msg)}
-                              title={playingMessageId === msg.id ? 'Stop audio' : 'Play text-to-speech'}
-                              className={`flex items-center gap-1 px-2 py-1 rounded-lg border cursor-pointer transition-colors ${
-                                playingMessageId === msg.id
-                                  ? 'bg-[#C9A227]/20 border-[#C9A227] text-[#E4C765]'
-                                  : 'hover:bg-zinc-800/40 border-transparent hover:border-zinc-700'
-                              }`}
-                            >
-                              {playingMessageId === msg.id ? (
-                                <>
-                                  <VolumeX className="w-3.5 h-3.5 text-[#E4C765]" />
-                                  <span>Stop Voice</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Volume2 className="w-3.5 h-3.5" />
-                                  <span>Listen</span>
-                                </>
+                            {/* Text to Speech Button Group */}
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => handleToggleSpeakMessage(msg)}
+                                title={playingMessageId === msg.id ? 'Stop audio' : 'Play text-to-speech'}
+                                className={`flex items-center gap-1 px-2 py-1 rounded-lg border cursor-pointer transition-colors ${
+                                  playingMessageId === msg.id
+                                    ? 'bg-[#C9A227]/20 border-[#C9A227] text-[#E4C765]'
+                                    : 'hover:bg-zinc-800/40 border-transparent hover:border-zinc-700'
+                                }`}
+                              >
+                                {playingMessageId === msg.id ? (
+                                  <>
+                                    <VolumeX className="w-3.5 h-3.5 text-[#E4C765]" />
+                                    <span>Stop Voice</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Volume2 className="w-3.5 h-3.5" />
+                                    <span>Listen</span>
+                                  </>
+                                )}
+                              </button>
+                              {playingMessageId === msg.id && (
+                                <button
+                                  onClick={handleToggleSpeechPause}
+                                  title={isSpeechPaused ? 'Resume playback' : 'Pause playback'}
+                                  className="px-2 py-1 rounded-lg border border-[#C9A227]/50 bg-[#C9A227]/10 text-[#E4C765] hover:bg-[#C9A227]/30 text-[11px] font-medium cursor-pointer"
+                                >
+                                  {isSpeechPaused ? 'Resume' : 'Pause'}
+                                </button>
                               )}
-                            </button>
+                            </div>
 
                             {/* Copy Answer Button */}
                             <button
@@ -1466,7 +1667,7 @@ export const OphireumAssistantPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={toggleVoiceRecording}
-                      title="Ophireum Voice (Tap to speak)"
+                      title="Ophireum Voice: Uses local browser Web Speech API. Audio is processed client-side and is not end-to-end encrypted."
                       className={`p-1.5 rounded-lg cursor-pointer transition-colors ${
                         isRecordingVoice
                           ? 'bg-rose-600 text-white animate-pulse'
@@ -1535,6 +1736,30 @@ export const OphireumAssistantPage: React.FC = () => {
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-5 text-xs">
+              {/* Provider Attribution and Feed Mode Status */}
+              <div className="p-3 rounded-lg border border-[#2B3245] bg-[#12151F] text-[11px] space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-zinc-300">Market Feed Status:</span>
+                  <span
+                    className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                      providerTelemetry?.isLiveFeedConnected
+                        ? 'bg-emerald-950 text-emerald-300 border border-emerald-700'
+                        : 'bg-amber-950/70 text-amber-300 border border-amber-700/60'
+                    }`}
+                  >
+                    {providerTelemetry?.isLiveFeedConnected ? 'LIVE FEED CONNECTED' : 'STANDBY / REFERENCE'}
+                  </span>
+                </div>
+                <div className="text-zinc-400 text-[10px]">
+                  Provider: <span className="text-[#E4C765]">{providerTelemetry?.provider || 'Ophireum Curated Liquidity Feed'}</span>
+                </div>
+                {providerTelemetry?.notice && (
+                  <div className="text-[10px] text-zinc-400 leading-tight">
+                    {providerTelemetry.notice}
+                  </div>
+                )}
+              </div>
+
               {/* Session Clocks */}
               <div className="space-y-2">
                 <div className="text-[11px] font-bold uppercase tracking-wider text-[#E4C765] flex items-center gap-1">
@@ -1785,15 +2010,7 @@ export const OphireumAssistantPage: React.FC = () => {
                     </div>
 
                     <button
-                      onClick={() => {
-                        if (!currentUser?.uid) {
-                          navigate('/register');
-                          return;
-                        }
-                        setWallet(w => ({ ...w, planId: plan.id, balance: w.balance + plan.monthlyCredits }));
-                        addToast('Plan Updated', `Subscribed to ${plan.name}`, 'success');
-                        setActiveDrawer('none');
-                      }}
+                      onClick={() => handleServerPlanCheckout(plan.id)}
                       className={`w-full py-2 rounded-lg font-bold text-xs cursor-pointer ${
                         wallet.planId === plan.id
                           ? 'bg-zinc-800 text-zinc-400 cursor-default'
@@ -1819,11 +2036,8 @@ export const OphireumAssistantPage: React.FC = () => {
                       <div className="text-zinc-400 text-[11px]">10 USDT</div>
                     </div>
                     <button
-                      onClick={() => {
-                        setWallet(w => ({ ...w, balance: w.balance + 500 }));
-                        addToast('Credits Added', '500 credits deposited.', 'success');
-                      }}
-                      className="px-2.5 py-1 rounded bg-[#C9A227] hover:bg-[#B8921F] text-black font-bold text-xs"
+                      onClick={() => handleCreditPackCheckout(500, 10)}
+                      className="px-2.5 py-1 rounded bg-[#C9A227] hover:bg-[#B8921F] text-black font-bold text-xs cursor-pointer"
                     >
                       Buy
                     </button>
@@ -1835,11 +2049,8 @@ export const OphireumAssistantPage: React.FC = () => {
                       <div className="text-zinc-400 text-[11px]">35 USDT</div>
                     </div>
                     <button
-                      onClick={() => {
-                        setWallet(w => ({ ...w, balance: w.balance + 2000 }));
-                        addToast('Credits Added', '2,000 credits deposited.', 'success');
-                      }}
-                      className="px-2.5 py-1 rounded bg-[#C9A227] hover:bg-[#B8921F] text-black font-bold text-xs"
+                      onClick={() => handleCreditPackCheckout(2000, 35)}
+                      className="px-2.5 py-1 rounded bg-[#C9A227] hover:bg-[#B8921F] text-black font-bold text-xs cursor-pointer"
                     >
                       Buy
                     </button>
@@ -1851,11 +2062,8 @@ export const OphireumAssistantPage: React.FC = () => {
                       <div className="text-zinc-400 text-[11px]">75 USDT</div>
                     </div>
                     <button
-                      onClick={() => {
-                        setWallet(w => ({ ...w, balance: w.balance + 5000 }));
-                        addToast('Credits Added', '5,000 credits deposited.', 'success');
-                      }}
-                      className="px-2.5 py-1 rounded bg-[#C9A227] hover:bg-[#B8921F] text-black font-bold text-xs"
+                      onClick={() => handleCreditPackCheckout(5000, 75)}
+                      className="px-2.5 py-1 rounded bg-[#C9A227] hover:bg-[#B8921F] text-black font-bold text-xs cursor-pointer"
                     >
                       Buy
                     </button>

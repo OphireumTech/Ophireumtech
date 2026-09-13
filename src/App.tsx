@@ -22,13 +22,26 @@ import { SupportDashboard } from './components/staff/SupportDashboard';
 import { FinanceDashboard } from './components/staff/FinanceDashboard';
 import { LicenseDashboard } from './components/staff/LicenseDashboard';
 import { EASimulator } from './components/ea/EASimulator';
-import { OphireumAssistantPage } from './components/assistant/OphireumAssistantPage';
-import { AssistantAdminConsole } from './components/assistant/AssistantAdminConsole';
 import { NotFoundPage } from './components/common/NotFoundPage';
 import { AccessDeniedPage } from './components/common/AccessDeniedPage';
 import { ContactAssistant } from './components/common/ContactAssistant';
 import { AlertTriangle, CheckCircle2, Info, X } from 'lucide-react';
 import { auth } from './lib/firebase';
+
+// Code-split heavy assistant components to optimize initial bundle size
+const OphireumAssistantPage = React.lazy(() =>
+  import('./components/assistant/OphireumAssistantPage').then(m => ({ default: m.OphireumAssistantPage }))
+);
+const AssistantAdminConsole = React.lazy(() =>
+  import('./components/assistant/AssistantAdminConsole').then(m => ({ default: m.AssistantAdminConsole }))
+);
+
+const AssistantLoadingSkeleton = () => (
+  <div className="min-h-[80vh] flex flex-col items-center justify-center bg-[#08090B] text-[#E4C765] font-mono text-xs space-y-3">
+    <div className="w-8 h-8 border-2 border-[#C9A227] border-t-transparent rounded-full animate-spin" />
+    <div className="tracking-widest uppercase text-[11px]">Loading Ophireum Assistant Workspace...</div>
+  </div>
+);
 
 const ToastContainer: React.FC = () => {
   const { toasts, removeToast } = useApp();
@@ -264,12 +277,21 @@ const AppContent: React.FC = () => {
       <main className="flex-1">
         <Routes>
           {/* Public Dedicated Ophireum Assistant Workspace */}
-          <Route path="/assistant" element={<OphireumAssistantPage />} />
+          <Route
+            path="/assistant"
+            element={
+              <React.Suspense fallback={<AssistantLoadingSkeleton />}>
+                <OphireumAssistantPage />
+              </React.Suspense>
+            }
+          />
           <Route
             path="/admin/assistant"
             element={
               <LicenseAdminRoute>
-                <AssistantAdminConsole />
+                <React.Suspense fallback={<AssistantLoadingSkeleton />}>
+                  <AssistantAdminConsole />
+                </React.Suspense>
               </LicenseAdminRoute>
             }
           />

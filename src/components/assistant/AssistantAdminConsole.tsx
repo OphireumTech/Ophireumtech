@@ -3,11 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  * OPHIREUM ASSISTANT ADMINISTRATOR CONSOLE
  * Comprehensive admin workspace for AI model management, emergency killswitch,
- * domain filter calibration, user credit adjustments, and compliance audit logs.
+ * domain filter calibration, authenticated credit ledger adjustments, and compliance audit logs.
  */
 
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
+import { auth } from '../../lib/firebase';
 import {
   Shield,
   Sliders,
@@ -20,7 +21,9 @@ import {
   CheckCircle,
   Database,
   Users,
-  Settings
+  Settings,
+  FileText,
+  ExternalLink
 } from 'lucide-react';
 
 export const AssistantAdminConsole: React.FC = () => {
@@ -29,6 +32,7 @@ export const AssistantAdminConsole: React.FC = () => {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showPauseConfirm, setShowPauseConfirm] = useState(false);
 
   // Form states
   const [emergencyPause, setEmergencyPause] = useState(false);
@@ -40,11 +44,21 @@ export const AssistantAdminConsole: React.FC = () => {
   const [creditAdjustmentEmail, setCreditAdjustmentEmail] = useState('');
   const [creditAdjustmentAmount, setCreditAdjustmentAmount] = useState(500);
   const [creditAdjustmentReason, setCreditAdjustmentReason] = useState('Customer Support Courtesy');
+  const [submittingCredit, setSubmittingCredit] = useState(false);
+
+  const getAuthHeaders = async () => {
+    const token = await auth.currentUser?.getIdToken();
+    return {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    };
+  };
 
   const fetchStats = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/v1/assistant/admin/stats');
+      const headers = await getAuthHeaders();
+      const res = await fetch('/api/v1/assistant/admin/stats', { headers });
       if (res.ok) {
         const data = await res.json();
         setStats(data);
@@ -54,6 +68,8 @@ export const AssistantAdminConsole: React.FC = () => {
           setStrictDomainFilter(Boolean(data.settings.strictDomainFilter));
           setTemperature(Number(data.settings.temperature ?? 0.3));
         }
+      } else {
+        console.warn('Admin stats endpoint returned:', res.status);
       }
     } catch (e) {
       console.warn('Failed to fetch admin stats:', e);
@@ -66,14 +82,16 @@ export const AssistantAdminConsole: React.FC = () => {
     fetchStats();
   }, []);
 
-  const handleSaveSettings = async () => {
+  const handleSaveSettings = async (overridePause?: boolean) => {
     setSaving(true);
     try {
+      const pauseVal = overridePause !== undefined ? overridePause : emergencyPause;
+      const headers = await getAuthHeaders();
       const res = await fetch('/api/v1/assistant/admin/settings', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
-          emergencyPause,
+          emergencyPause: pauseVal,
           modelName,
           strictDomainFilter,
           temperature
@@ -81,29 +99,61 @@ export const AssistantAdminConsole: React.FC = () => {
       });
       if (res.ok) {
         addToast('Settings Saved', 'Assistant gateway configuration updated.', 'success');
+        setEmergencyPause(pauseVal);
         fetchStats();
       } else {
-        throw new Error('Failed to update');
+        const err = await res.json();
+        throw new Error(err.message || 'Failed to update');
       }
-    } catch {
-      addToast('Error', 'Could not update gateway settings.', 'critical');
+    } catch (err: any) {
+      addToast('Error', err.message || 'Could not update gateway settings.', 'critical');
     } finally {
       setSaving(false);
+      setShowPauseConfirm(false);
     }
   };
 
-  const handleManualCreditDeposit = (e: React.FormEvent) => {
+  const handleManualCreditDeposit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!creditAdjustmentEmail.trim()) {
-      addToast('Input Required', 'Please provide user email.', 'warning');
+      addToast('Input Required', 'Please provide target user ID or email.', 'warning');
       return;
     }
-    addToast(
-      'Credit Adjustment Recorded',
-      `Granted ${creditAdjustmentAmount} credits to ${creditAdjustmentEmail}. Reason: ${creditAdjustmentReason}`,
-      'success'
-    );
-    setCreditAdjustmentEmail('');
+    if (!creditAdjustmentReason || creditAdjustmentReason.trim().length < 8) {
+      addToast('Reason Required', 'Mandatory adjustment reason of at least 8 characters required.', 'warning');
+      return;
+    }
+
+    setSubmittingCredit(true);
+    try {
+      const headers = await getAuthHeaders();
+      const res = await fetch('/api/v1/assistant/admin/credits/adjust', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          targetUserId: creditAdjustmentEmail.trim(),
+          amount: creditAdjustmentAmount,
+          reason: creditAdjustmentReason.trim()
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        addToast(
+          'Credit Adjustment Committed',
+          `Successfully posted ${creditAdjustmentAmount > 0 ? '+' : ''}${creditAdjustmentAmount} credits to ${creditAdjustmentEmail}. Tx ID: ${data.tx?.id}`,
+          'success'
+        );
+        setCreditAdjustmentEmail('');
+        fetchStats();
+      } else {
+        throw new Error(data.message || 'Credit adjustment rejected');
+      }
+    } catch (err: any) {
+      addToast('Adjustment Error', err.message || 'Failed to commit credit adjustment.', 'critical');
+    } finally {
+      setSubmittingCredit(false);
+    }
   };
 
   if (!['super_admin', 'license_admin', 'support_agent'].includes(currentRole)) {
@@ -113,6 +163,8 @@ export const AssistantAdminConsole: React.FC = () => {
       </div>
     );
   }
+
+  const providerHealth = stats?.systemHealth?.providerStatus;
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-8 font-sans">
@@ -142,11 +194,50 @@ export const AssistantAdminConsole: React.FC = () => {
 
       {/* Emergency Alert if Paused */}
       {emergencyPause && (
-        <div className="p-4 rounded-xl bg-rose-950/60 border border-rose-600/80 text-rose-200 text-xs flex items-center gap-3">
-          <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0" />
-          <div>
-            <strong>Ophireum Assistant is currently PAUSED globally.</strong>
-            <p>End users requesting chat responses will receive maintenance notices.</p>
+        <div className="p-4 rounded-xl bg-rose-950/60 border border-rose-600/80 text-rose-200 text-xs flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0" />
+            <div>
+              <strong>Ophireum Assistant is currently PAUSED globally.</strong>
+              <p>End users requesting chat responses will receive maintenance notices.</p>
+            </div>
+          </div>
+          <button
+            onClick={() => handleSaveSettings(false)}
+            disabled={saving}
+            className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded font-bold text-xs cursor-pointer"
+          >
+            Resume Operations
+          </button>
+        </div>
+      )}
+
+      {/* Confirmation Modal for Emergency Pause */}
+      {showPauseConfirm && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+          <div className="max-w-md w-full p-6 rounded-2xl bg-[#0E1015] border border-rose-600/60 space-y-4">
+            <div className="flex items-center gap-2 text-rose-400 font-bold">
+              <AlertTriangle className="w-5 h-5" />
+              <span>Confirm Global Emergency Pause</span>
+            </div>
+            <p className="text-xs text-zinc-300">
+              Are you certain you wish to halt all Ophireum Assistant operations platform-wide? Active user queries will be rejected with maintenance notices until resumed.
+            </p>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                onClick={() => setShowPauseConfirm(false)}
+                className="px-3 py-1.5 rounded-lg border border-zinc-700 text-zinc-300 text-xs hover:bg-zinc-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleSaveSettings(true)}
+                disabled={saving}
+                className="px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold"
+              >
+                {saving ? 'Pausing...' : 'Confirm Emergency Pause'}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -155,7 +246,7 @@ export const AssistantAdminConsole: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="p-4 rounded-xl border border-zinc-800 bg-[#0E1015]">
           <div className="text-[11px] text-zinc-400 uppercase tracking-wider font-semibold">Gateway Status</div>
-          <div className="text-xl font-bold mt-1 text-emerald-400 flex items-center gap-2">
+          <div className={`text-xl font-bold mt-1 flex items-center gap-2 ${emergencyPause ? 'text-rose-400' : 'text-emerald-400'}`}>
             <Activity className="w-4 h-4" />
             <span>{emergencyPause ? 'PAUSED' : 'ONLINE'}</span>
           </div>
@@ -251,24 +342,36 @@ export const AssistantAdminConsole: React.FC = () => {
               />
             </div>
 
-            {/* Emergency Killswitch Toggle */}
+            {/* Emergency Killswitch Action */}
             <div className="flex items-center justify-between p-3 rounded-xl bg-rose-950/20 border border-rose-900/40">
               <div>
                 <div className="font-semibold text-rose-300">Global Emergency Maintenance Pause</div>
                 <div className="text-[11px] text-zinc-400">
-                  Instantly stops assistant responses and serves a friendly maintenance alert.
+                  Requires two-step administrative confirmation.
                 </div>
               </div>
-              <input
-                type="checkbox"
-                checked={emergencyPause}
-                onChange={e => setEmergencyPause(e.target.checked)}
-                className="w-4 h-4 accent-rose-600 cursor-pointer"
-              />
+              {emergencyPause ? (
+                <button
+                  type="button"
+                  onClick={() => handleSaveSettings(false)}
+                  disabled={saving}
+                  className="px-3 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs"
+                >
+                  Resume
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowPauseConfirm(true)}
+                  className="px-3 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs"
+                >
+                  Pause
+                </button>
+              )}
             </div>
 
             <button
-              onClick={handleSaveSettings}
+              onClick={() => handleSaveSettings()}
               disabled={saving}
               className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#C9A227] to-[#E4C765] text-black font-bold text-xs shadow-md cursor-pointer hover:from-[#B8921F]"
             >
@@ -286,10 +389,10 @@ export const AssistantAdminConsole: React.FC = () => {
 
           <form onSubmit={handleManualCreditDeposit} className="space-y-3 text-xs">
             <div>
-              <label className="text-zinc-400 block mb-1">User Email Address</label>
+              <label className="text-zinc-400 block mb-1">User Identifier / Email</label>
               <input
-                type="email"
-                placeholder="customer@domain.com"
+                type="text"
+                placeholder="user_id or customer@domain.com"
                 value={creditAdjustmentEmail}
                 onChange={e => setCreditAdjustmentEmail(e.target.value)}
                 className="w-full px-3 py-2 rounded-lg bg-black/40 border border-zinc-700 text-white outline-none"
@@ -307,58 +410,94 @@ export const AssistantAdminConsole: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="text-zinc-400 block mb-1">Action Reason</label>
-                <select
+                <label className="text-zinc-400 block mb-1">Mandatory Reason</label>
+                <input
+                  type="text"
+                  placeholder="Min 8 characters reason"
                   value={creditAdjustmentReason}
                   onChange={e => setCreditAdjustmentReason(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg bg-black/40 border border-zinc-700 text-white outline-none"
-                >
-                  <option value="Customer Support Courtesy">Customer Support Courtesy</option>
-                  <option value="Failed Request Refund">Failed Request Refund</option>
-                  <option value="Institutional Pilot Allowance">Institutional Pilot Allowance</option>
-                  <option value="Billing Dispute Adjustment">Billing Dispute Adjustment</option>
-                </select>
+                />
               </div>
             </div>
 
             <p className="text-[11px] text-zinc-500">
-              All credit grants and adjustments are permanently recorded in the immutable audit ledger.
+              All credit adjustments are executed server-side and committed to the immutable audit ledger.
             </p>
 
             <button
               type="submit"
-              className="w-full py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-[#E4C765] font-bold text-xs border border-[#C9A227]/40 cursor-pointer"
+              disabled={submittingCredit}
+              className="w-full py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-[#E4C765] font-bold text-xs border border-[#C9A227]/40 cursor-pointer disabled:opacity-50"
             >
-              Post Credit Adjustment to Ledger
+              {submittingCredit ? 'Posting to Ledger...' : 'Post Credit Adjustment to Server Ledger'}
             </button>
           </form>
 
-          {/* Provider Health Monitor */}
+          {/* Honest Provider Health Monitor */}
           <div className="pt-3 border-t border-zinc-800 space-y-2">
             <div className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
               Provider Telemetry & Health
             </div>
-            <div className="grid grid-cols-2 gap-2 text-[11px]">
-              <div className="p-2 rounded-lg bg-[#141720] border border-zinc-800 flex justify-between items-center">
-                <span>Google GenAI:</span>
-                <span className="text-emerald-400 font-semibold">Configured</span>
+            <div className="space-y-2 text-[11px]">
+              <div className="p-2.5 rounded-lg bg-[#141720] border border-zinc-800 flex justify-between items-center">
+                <span>Google GenAI Engine:</span>
+                <span className={stats?.systemHealth?.geminiApiKeyConfigured ? 'text-emerald-400 font-semibold' : 'text-amber-400 font-semibold'}>
+                  {stats?.systemHealth?.geminiApiKeyConfigured ? 'Connected (API Key Active)' : 'Deterministic Fallback Mode'}
+                </span>
               </div>
-              <div className="p-2 rounded-lg bg-[#141720] border border-zinc-800 flex justify-between items-center">
-                <span>Ophireum FIX:</span>
-                <span className="text-emerald-400 font-semibold">Active</span>
-              </div>
-              <div className="p-2 rounded-lg bg-[#141720] border border-zinc-800 flex justify-between items-center">
-                <span>FRED Sync:</span>
-                <span className="text-emerald-400 font-semibold">Synchronized</span>
-              </div>
-              <div className="p-2 rounded-lg bg-[#141720] border border-zinc-800 flex justify-between items-center">
-                <span>ECB Reference:</span>
-                <span className="text-emerald-400 font-semibold">Synchronized</span>
+              <div className="p-2.5 rounded-lg bg-[#141720] border border-zinc-800">
+                <div className="flex justify-between items-center">
+                  <span>Market Data Stream:</span>
+                  <span className={providerHealth?.isLiveFeedConnected ? 'text-emerald-400 font-semibold' : 'text-amber-400 font-semibold'}>
+                    {providerHealth?.connectionStatus || 'STANDBY_DISCONNECTED'}
+                  </span>
+                </div>
+                <div className="text-[10px] text-zinc-400 mt-1">
+                  {providerHealth?.notice || 'Market adapter in standby mode.'}
+                </div>
+                {providerHealth?.requiredCredentials && providerHealth.requiredCredentials.length > 0 && !providerHealth.isLiveFeedConnected && (
+                  <div className="mt-1.5 text-[10px] text-zinc-500">
+                    Required for live FIX streaming: {providerHealth.requiredCredentials.join(', ')}
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Audit Logs Table */}
+      {stats?.auditLogs && stats.auditLogs.length > 0 && (
+        <div className="p-5 rounded-2xl border border-zinc-800 bg-[#0E1015] space-y-3">
+          <div className="flex items-center gap-2 text-xs font-bold text-[#E4C765] uppercase tracking-wider">
+            <FileText className="w-4 h-4" />
+            <span>Recent Assistant Administrative Audit Trail</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-[11px] text-zinc-300">
+              <thead className="bg-[#141720] text-zinc-400 border-b border-zinc-800 uppercase tracking-wider">
+                <tr>
+                  <th className="py-2 px-3">Timestamp (UTC)</th>
+                  <th className="py-2 px-3">Action</th>
+                  <th className="py-2 px-3">Admin</th>
+                  <th className="py-2 px-3">Details</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-800/60 font-mono">
+                {stats.auditLogs.map((log: any) => (
+                  <tr key={log.id} className="hover:bg-zinc-900/40">
+                    <td className="py-2 px-3 text-zinc-400">{new Date(log.timestamp).toLocaleString()}</td>
+                    <td className="py-2 px-3 text-[#E4C765] font-semibold">{log.action}</td>
+                    <td className="py-2 px-3 text-zinc-300">{log.performedBy}</td>
+                    <td className="py-2 px-3 text-zinc-400 truncate max-w-md">{JSON.stringify(log.details)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

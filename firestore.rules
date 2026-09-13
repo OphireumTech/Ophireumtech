@@ -345,10 +345,10 @@ service cloud.firestore {
       allow delete: if isSuperAdmin();
     }
 
-    // 6. Credit Transactions (Immutable Ledger)
+    // 6. Credit Transactions (Immutable Ledger - Server Admin only write, client create blocked)
     match /creditTransactions/{txId} {
       allow read: if (isAuth() && resource.data.userId == request.auth.uid) || isStaff();
-      allow create: if isAuth();
+      allow create: if isSuperAdmin();
       allow update, delete: if false;
     }
 

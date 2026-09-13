@@ -1837,14 +1837,79 @@ import {
   handleMarketOverview,
   handleAssistantFeedback,
   handleAssistantAdminStats,
-  handleAssistantAdminSettings
+  handleAssistantAdminSettings,
+  handleAdminCreditAdjust,
+  handleAssistantUpload,
+  handleListConversations,
+  handleCreateConversation,
+  handleGetConversation,
+  handleUpdateConversation,
+  handleDeleteConversation,
+  handleExportConversation,
+  handleGetWallet,
+  handleSubscriptionCheckout
 } from './server/assistantEngine';
 
-app.post(['/api/v1/assistant/chat', '/api/assistant/chat'], handleAssistantChat);
+const optionalAuthenticated = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return next();
+  }
+  const token = authHeader.split('Bearer ')[1].trim();
+  const authAdmin = getAdminAuth();
+  if (authAdmin) {
+    try {
+      const decoded = await authAdmin.verifyIdToken(token);
+      req.user = {
+        uid: decoded.uid,
+        email: decoded.email,
+        email_verified: Boolean(decoded.email_verified),
+        role: (decoded.role as any) || 'customer',
+        auth_time: decoded.auth_time
+      };
+    } catch {
+      // Ignored for optional auth
+    }
+  } else if (process.env.NODE_ENV !== 'production' && req.headers['x-mock-user-role']) {
+    req.user = {
+      uid: String(req.headers['x-mock-user-id'] || 'mock-user'),
+      email: String(req.headers['x-mock-user-email'] || 'test@ophireum.invalid'),
+      email_verified: req.headers['x-mock-user-verified'] === 'true',
+      role: (req.headers['x-mock-user-role'] as any) || 'customer',
+      auth_time: Math.floor(Date.now() / 1000)
+    };
+  }
+  next();
+};
+
+// Chat: Rate limited, optional auth (identifies user context for reserve-commit-release & isolation)
+app.post(['/api/v1/assistant/chat', '/api/assistant/chat'], rateLimit(30, 60000), optionalAuthenticated, handleAssistantChat);
+
+// Market Overview: Public
 app.get(['/api/v1/assistant/market-overview', '/api/assistant/market-overview'], handleMarketOverview);
+
+// File Upload: Authenticated, rate limited
+app.post(['/api/v1/assistant/upload', '/api/assistant/upload'], rateLimit(15, 60000), requireAuthenticated, handleAssistantUpload);
+
+// User-Isolated Conversations
+app.get(['/api/v1/assistant/conversations', '/api/assistant/conversations'], requireAuthenticated, handleListConversations);
+app.post(['/api/v1/assistant/conversations', '/api/assistant/conversations'], requireAuthenticated, handleCreateConversation);
+app.get(['/api/v1/assistant/conversations/:id', '/api/assistant/conversations/:id'], requireAuthenticated, handleGetConversation);
+app.patch(['/api/v1/assistant/conversations/:id', '/api/assistant/conversations/:id'], requireAuthenticated, handleUpdateConversation);
+app.delete(['/api/v1/assistant/conversations/:id', '/api/assistant/conversations/:id'], requireAuthenticated, handleDeleteConversation);
+app.get(['/api/v1/assistant/conversations/:id/export', '/api/assistant/conversations/:id/export'], requireAuthenticated, handleExportConversation);
+
+// Credit Wallet & Checkout
+app.get(['/api/v1/assistant/wallet', '/api/assistant/wallet'], requireAuthenticated, handleGetWallet);
+app.post(['/api/v1/assistant/subscription/checkout', '/api/assistant/subscription/checkout'], requireAuthenticated, handleSubscriptionCheckout);
+
+// User Feedback
 app.post(['/api/v1/assistant/feedback', '/api/assistant/feedback'], handleAssistantFeedback);
-app.get(['/api/v1/assistant/admin/stats', '/api/assistant/admin/stats'], handleAssistantAdminStats);
-app.post(['/api/v1/assistant/admin/settings', '/api/assistant/admin/settings'], handleAssistantAdminSettings);
+
+// Administrator Routes (Protected by Super Admin / License Admin role)
+app.get(['/api/v1/assistant/admin/stats', '/api/assistant/admin/stats'], requireAuthenticated, requireAnyRole(['super_admin', 'license_admin']), handleAssistantAdminStats);
+app.post(['/api/v1/assistant/admin/settings', '/api/assistant/admin/settings'], requireAuthenticated, requireAnyRole(['super_admin', 'license_admin']), handleAssistantAdminSettings);
+app.post(['/api/v1/assistant/admin/credits/adjust', '/api/assistant/admin/credits/adjust'], requireAuthenticated, requireAnyRole(['super_admin', 'license_admin']), handleAdminCreditAdjust);
 
 // ==========================================
 // 7. FRONTEND SERVING & VITE INTEGRATION
