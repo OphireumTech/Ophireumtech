@@ -24,6 +24,57 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Defensive Extension Error Handler: Prevents third-party browser extension injection failures (e.g. MetaMask in sandboxed iframes) from crashing runtime -->
+    <script>
+      (function() {
+        function isIgnoredExtensionError(err) {
+          if (!err) return false;
+          var text = '';
+          try {
+            if (typeof err === 'string') {
+              text = err;
+            } else if (err.message) {
+              text = err.message + ' ' + (err.stack || '');
+            } else if (err.reason) {
+              text = (err.reason.message || String(err.reason)) + ' ' + (err.reason.stack || '');
+            } else {
+              text = String(err);
+            }
+          } catch (e) {
+            return false;
+          }
+          var lower = text.toLowerCase();
+          return (
+            lower.indexOf('metamask') !== -1 ||
+            lower.indexOf('failed to connect to metamask') !== -1 ||
+            lower.indexOf('chrome-extension://') !== -1 ||
+            lower.indexOf('moz-extension://') !== -1 ||
+            lower.indexOf('inpage.js') !== -1 ||
+            lower.indexOf('cannot redefine property: ethereum') !== -1 ||
+            lower.indexOf('resizeobserver loop') !== -1
+          );
+        }
+
+        window.addEventListener('error', function(event) {
+          if (isIgnoredExtensionError(event.error) || isIgnoredExtensionError(event.message) || isIgnoredExtensionError(event.filename)) {
+            event.preventDefault();
+            if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+            console.warn('[Extension Guard] Safely intercepted extension error:', event.message || event.error);
+            return true;
+          }
+        }, true);
+
+        window.addEventListener('unhandledrejection', function(event) {
+          if (isIgnoredExtensionError(event.reason)) {
+            event.preventDefault();
+            if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+            console.warn('[Extension Guard] Safely intercepted unhandled extension rejection:', event.reason);
+            return true;
+          }
+        }, true);
+      })();
+    </script>
   </head>
   <body class="bg-[#08090B] text-[#F7F3E8] antialiased selection:bg-[#C9A227]/30 selection:text-[#E4C765]">
     <div id="root">

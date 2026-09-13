@@ -4,6 +4,56 @@ import App from './App';
 import './index.css';
 
 /**
+ * Filter out benign third-party browser extension issues (e.g. MetaMask inpage injection in sandboxed iframe)
+ */
+function setupExtensionGuards() {
+  const isExtensionError = (err: any): boolean => {
+    if (!err) return false;
+    const msg = (typeof err === 'string' ? err : err.message || err.reason || '').toString().toLowerCase();
+    const stack = (err?.stack || '').toString().toLowerCase();
+    return (
+      msg.includes('metamask') ||
+      msg.includes('failed to connect to metamask') ||
+      msg.includes('chrome-extension://') ||
+      msg.includes('moz-extension://') ||
+      msg.includes('inpage.js') ||
+      msg.includes('cannot redefine property: ethereum') ||
+      msg.includes('resizeobserver loop') ||
+      stack.includes('chrome-extension://') ||
+      stack.includes('moz-extension://')
+    );
+  };
+
+  window.addEventListener(
+    'error',
+    (event) => {
+      if (isExtensionError(event.error) || isExtensionError(event.message) || isExtensionError(event.filename)) {
+        event.preventDefault();
+        event.stopImmediatePropagation?.();
+        console.warn('[Extension Guard] Neutralized external extension error:', event.message || event.error);
+        return true;
+      }
+    },
+    true
+  );
+
+  window.addEventListener(
+    'unhandledrejection',
+    (event) => {
+      if (isExtensionError(event.reason)) {
+        event.preventDefault();
+        event.stopImmediatePropagation?.();
+        console.warn('[Extension Guard] Neutralized unhandled extension rejection:', event.reason);
+        return true;
+      }
+    },
+    true
+  );
+}
+
+setupExtensionGuards();
+
+/**
  * Root Application Bootstrapper
  * Ensures the initial loading screen exits reliably and catches fatal startup errors.
  */
