@@ -12,15 +12,16 @@ import { createServer as createViteServer } from 'vite';
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getAuth, Auth, DecodedIdToken } from 'firebase-admin/auth';
 import { getFirestore, Firestore, FieldValue } from 'firebase-admin/firestore';
+import { GoogleGenAI } from '@google/genai';
 
 dotenv.config();
 
 const app = express();
 const PORT = 3000;
 
-// Base parsing middlewares
-app.use(express.json({ limit: '2mb' }));
-app.use(express.urlencoded({ extended: true, limit: '2mb' }));
+// Base parsing middlewares (25mb to support chart screenshots and document analysis)
+app.use(express.json({ limit: '25mb' }));
+app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
 // Lazy Firebase Admin initialization
 let adminApp: App | null = null;
@@ -1827,6 +1828,23 @@ app.post('/api/v1/seed', (req: Request, res: Response) => {
     settings: systemSettings
   });
 });
+
+// ==========================================
+// 6.5 OPHIREUM ASSISTANT SERVER GATEWAY
+// ==========================================
+import {
+  handleAssistantChat,
+  handleMarketOverview,
+  handleAssistantFeedback,
+  handleAssistantAdminStats,
+  handleAssistantAdminSettings
+} from './server/assistantEngine';
+
+app.post(['/api/v1/assistant/chat', '/api/assistant/chat'], handleAssistantChat);
+app.get(['/api/v1/assistant/market-overview', '/api/assistant/market-overview'], handleMarketOverview);
+app.post(['/api/v1/assistant/feedback', '/api/assistant/feedback'], handleAssistantFeedback);
+app.get(['/api/v1/assistant/admin/stats', '/api/assistant/admin/stats'], handleAssistantAdminStats);
+app.post(['/api/v1/assistant/admin/settings', '/api/assistant/admin/settings'], handleAssistantAdminSettings);
 
 // ==========================================
 // 7. FRONTEND SERVING & VITE INTEGRATION

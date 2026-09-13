@@ -308,6 +308,74 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ==========================================
+    // M. OPHIREUM ASSISTANT RULES
+    // ==========================================
+
+    // 1. Assistant User Preferences
+    match /assistantUsers/{userId} {
+      allow read: if isOwner(userId) || isStaff();
+      allow create, update: if isOwner(userId);
+      allow delete: if isSuperAdmin();
+    }
+
+    // 2. Private Conversations (Strict Data Isolation - Staff cannot read private chats by default)
+    match /conversations/{conversationId} {
+      allow read, update, delete: if isAuth() && resource.data.userId == request.auth.uid;
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // 3. Conversation Messages
+    match /messages/{messageId} {
+      allow read, update, delete: if isAuth() && resource.data.userId == request.auth.uid;
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // 4. Assistant Subscriptions
+    match /assistantSubscriptions/{subscriptionId} {
+      allow read: if (isAuth() && resource.data.userId == request.auth.uid) || isStaff();
+      allow create, update: if isSuperAdmin() || isFinance();
+      allow delete: if isSuperAdmin();
+    }
+
+    // 5. Credit Wallets
+    match /creditWallets/{userId} {
+      allow read: if isOwner(userId) || isStaff();
+      allow create, update: if isSuperAdmin() || isFinance();
+      allow delete: if isSuperAdmin();
+    }
+
+    // 6. Credit Transactions (Immutable Ledger)
+    match /creditTransactions/{txId} {
+      allow read: if (isAuth() && resource.data.userId == request.auth.uid) || isStaff();
+      allow create: if isAuth();
+      allow update, delete: if false;
+    }
+
+    // 7. Watchlists & Alerts
+    match /watchlists/{watchlistId} {
+      allow read, update, delete: if isAuth() && resource.data.userId == request.auth.uid;
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+    }
+
+    match /marketAlerts/{alertId} {
+      allow read, update, delete: if isAuth() && resource.data.userId == request.auth.uid;
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // 8. User Feedback
+    match /assistantFeedback/{feedbackId} {
+      allow read: if isStaff();
+      allow create: if true;
+      allow update, delete: if isSuperAdmin();
+    }
+
+    // 9. Knowledge Base & Curated Documents
+    match /knowledgeDocuments/{docId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
     // Default Deny
     match /{document=**} {
       allow read, write: if false;

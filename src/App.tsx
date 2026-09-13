@@ -22,6 +22,8 @@ import { SupportDashboard } from './components/staff/SupportDashboard';
 import { FinanceDashboard } from './components/staff/FinanceDashboard';
 import { LicenseDashboard } from './components/staff/LicenseDashboard';
 import { EASimulator } from './components/ea/EASimulator';
+import { OphireumAssistantPage } from './components/assistant/OphireumAssistantPage';
+import { AssistantAdminConsole } from './components/assistant/AssistantAdminConsole';
 import { NotFoundPage } from './components/common/NotFoundPage';
 import { AccessDeniedPage } from './components/common/AccessDeniedPage';
 import { ContactAssistant } from './components/common/ContactAssistant';
@@ -201,6 +203,8 @@ const SuperAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) 
 
 const AppContent: React.FC = () => {
   const { settings, addToast, setCurrentRoute } = useApp();
+  const location = useLocation();
+  const isAssistantPage = location.pathname === '/assistant';
 
   // Handle email verification callback URL parameter: https://ophireum.biz/?emailVerified=1
   React.useEffect(() => {
@@ -259,6 +263,17 @@ const AppContent: React.FC = () => {
       {/* Page Content Container with React Router Routes */}
       <main className="flex-1">
         <Routes>
+          {/* Public Dedicated Ophireum Assistant Workspace */}
+          <Route path="/assistant" element={<OphireumAssistantPage />} />
+          <Route
+            path="/admin/assistant"
+            element={
+              <LicenseAdminRoute>
+                <AssistantAdminConsole />
+              </LicenseAdminRoute>
+            }
+          />
+
           {/* Public Home & Pricing */}
           <Route path="/" element={<HomePage />} />
           <Route path="/home" element={<Navigate to="/" replace />} />
@@ -470,10 +485,10 @@ const AppContent: React.FC = () => {
       </main>
 
       {/* Institutional Legal Footer */}
-      <Footer />
+      {!isAssistantPage && <Footer />}
 
       {/* Institutional Contact Assistant for Public Pages (Black & Gold) */}
-      <ContactAssistant />
+      {!isAssistantPage && <ContactAssistant />}
 
       {/* Dynamic Toast Layer */}
       <ToastContainer />

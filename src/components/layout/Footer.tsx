@@ -69,6 +69,14 @@ export const Footer: React.FC = () => {
             <div className="text-xs font-semibold uppercase tracking-wider text-zinc-200">Technology</div>
             <ul className="space-y-2 text-xs">
               <li>
+                <button onClick={() => handleNav('assistant')} className="hover:text-[#E4C765] transition-colors text-[#E4C765] font-semibold flex items-center gap-1.5">
+                  <span>Ophireum Assistant</span>
+                  <span className="text-[9px] px-1 py-0.2 rounded bg-[#C9A227]/20 border border-[#C9A227]/40 text-[#E4C765]">
+                    AI
+                  </span>
+                </button>
+              </li>
+              <li>
                 <button onClick={() => handleNav('product-ea')} className="hover:text-[#E4C765] transition-colors">
                   OPHIREUM Expert Assistant
                 </button>

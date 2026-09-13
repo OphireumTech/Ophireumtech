@@ -5,6 +5,7 @@
  */
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import {
   Layers,
@@ -34,7 +35,8 @@ import {
   Power,
   Radio,
   Eye,
-  EyeOff
+  EyeOff,
+  Sparkles
 } from 'lucide-react';
 import { PaymentMethod, TicketCategory, TicketPriority } from '../../types';
 import { BrandLogo } from '../common/BrandLogo';
@@ -76,6 +78,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({ initialTab }) =>
     sendPasswordReset,
     updateProfileInfo
   } = useApp();
+  const navigate = useNavigate();
 
   const getMappedTab = (tab?: string) => {
     switch (tab) {
@@ -374,6 +377,23 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({ initialTab }) =>
               <span>{tab.label}</span>
             </button>
           ))}
+
+          {/* Quick Launcher to Ophireum Assistant Workspace */}
+          <button
+            onClick={() => {
+              setCurrentRoute('assistant');
+              navigate('/assistant');
+            }}
+            className="w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between text-[#E4C765] bg-[#C9A227]/10 border border-[#C9A227]/30 hover:bg-[#C9A227]/20 transition-colors cursor-pointer mt-2"
+          >
+            <div className="flex items-center gap-2.5">
+              <Sparkles className="w-4 h-4 text-[#C9A227]" />
+              <span>Ophireum Assistant</span>
+            </div>
+            <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#C9A227] text-black font-extrabold">
+              AI
+            </span>
+          </button>
           </div>
         </div>
 
@@ -382,6 +402,36 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({ initialTab }) =>
           {/* TAB 1: OVERVIEW */}
           {activeTab === 'overview' && (
             <div className="space-y-6">
+              {/* Ophireum Assistant Quick Access Workspace Card */}
+              <div className="p-5 rounded-2xl bg-gradient-to-r from-[#171B26] via-[#121520] to-[#0D0F16] border border-[#C9A227]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg">
+                <div className="flex items-center gap-4">
+                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#C9A227] to-[#8C6D14] flex items-center justify-center text-black font-serif font-bold text-lg shadow-md shrink-0">
+                    OA
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-serif font-bold text-sm text-[#F7F3E8]">Ophireum Assistant</h4>
+                      <span className="px-2 py-0.5 rounded-full bg-[#C9A227]/20 border border-[#C9A227]/40 text-[#E4C765] text-[10px] font-bold">
+                        AI WORKSPACE
+                      </span>
+                    </div>
+                    <p className="text-xs text-zinc-400 mt-0.5">
+                      Structured market intelligence, live XAUUSD analytics, session research, and trade risk calculations.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setCurrentRoute('assistant');
+                    navigate('/assistant');
+                  }}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#C9A227] to-[#E4C765] text-black font-bold text-xs shadow-md hover:brightness-110 flex items-center gap-2 shrink-0 cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Open Assistant</span>
+                </button>
+              </div>
+
               {/* Primary Active Licence Card */}
               {userLicense ? (
                 <div className="p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-[#101420] via-[#0E1118] to-[#0A0D14] border border-[#232A3E] space-y-6">

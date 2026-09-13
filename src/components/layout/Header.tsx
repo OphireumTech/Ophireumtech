@@ -345,6 +345,21 @@ export const Header: React.FC = () => {
             Home
           </button>
 
+          {/* Dedicated Ophireum Assistant Workspace */}
+          <button
+            id="nav-link-assistant"
+            type="button"
+            onClick={() => handleNav('assistant')}
+            className={`flex items-center gap-1.5 transition-colors hover:text-[#E4C765] cursor-pointer py-2 ${
+              location.pathname === '/assistant' ? 'text-[#E4C765] font-semibold' : ''
+            }`}
+          >
+            <span>Ophireum Assistant</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#C9A227]/20 border border-[#C9A227]/40 text-[#E4C765] font-bold">
+              AI
+            </span>
+          </button>
+
           {/* 1. PRODUCT MENU */}
           <div
             className="relative"
@@ -832,6 +847,16 @@ export const Header: React.FC = () => {
 
           {/* Primary Quick Links */}
           <div className="grid grid-cols-2 gap-2 text-xs">
+            <button
+              type="button"
+              onClick={() => handleNav('assistant')}
+              className="col-span-2 p-2.5 text-left bg-gradient-to-r from-[#181B26] to-[#12141C] border border-[#C9A227]/50 rounded-xl font-bold text-[#E4C765] flex items-center justify-between cursor-pointer"
+            >
+              <span>Ophireum Assistant</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#C9A227] text-black font-extrabold uppercase">
+                AI Workspace
+              </span>
+            </button>
             <button
               type="button"
               onClick={() => handleNav('home')}

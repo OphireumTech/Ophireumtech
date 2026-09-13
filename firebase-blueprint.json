@@ -530,6 +530,46 @@
     "/bindingAuditLogs/{logId}": {
       "schema": "BindingAuditLog",
       "description": "Immutable MT5 binding audit records"
+    },
+    "/assistantUsers/{userId}": {
+      "schema": "User",
+      "description": "User assistant preferences and telemetry"
+    },
+    "/conversations/{conversationId}": {
+      "schema": "AssistantConversation",
+      "description": "User conversation sessions in Ophireum Assistant"
+    },
+    "/messages/{messageId}": {
+      "schema": "AssistantMessage",
+      "description": "Individual messages and structured analysis within conversation"
+    },
+    "/assistantSubscriptions/{subscriptionId}": {
+      "schema": "AssistantSubscription",
+      "description": "Active Ophireum Assistant subscriptions"
+    },
+    "/creditWallets/{userId}": {
+      "schema": "CreditWallet",
+      "description": "User credit ledger and token allowances"
+    },
+    "/creditTransactions/{transactionId}": {
+      "schema": "CreditTransaction",
+      "description": "Immutable credit transaction ledger entries"
+    },
+    "/watchlists/{watchlistId}": {
+      "schema": "MarketWatchlist",
+      "description": "User saved market tickers and instruments"
+    },
+    "/marketAlerts/{alertId}": {
+      "schema": "MarketAlert",
+      "description": "User configured market price and economic alerts"
+    },
+    "/assistantFeedback/{feedbackId}": {
+      "schema": "AssistantFeedback",
+      "description": "User quality ratings and feedback on assistant responses"
+    },
+    "/knowledgeDocuments/{docId}": {
+      "schema": "KnowledgeDocument",
+      "description": "Curated knowledge base articles and operational guides"
     }
   }
 }
