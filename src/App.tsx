@@ -222,6 +222,19 @@ const AppContent: React.FC = () => {
   const { settings, addToast, setCurrentRoute } = useApp();
   const location = useLocation();
   const isAssistantPage = location.pathname === '/assistant';
+  const isPortalRoute =
+    location.pathname.startsWith('/dashboard') ||
+    location.pathname.startsWith('/portal') ||
+    location.pathname.startsWith('/client') ||
+    location.pathname.startsWith('/account') ||
+    location.pathname.startsWith('/trading');
+
+  const isStaffRoute =
+    location.pathname.startsWith('/support-dashboard') ||
+    location.pathname.startsWith('/finance-dashboard') ||
+    location.pathname.startsWith('/license-dashboard') ||
+    location.pathname.startsWith('/admin') ||
+    location.pathname.startsWith('/compliance-review');
 
   // Handle email verification callback URL parameter: https://ophireum.biz/?emailVerified=1
   React.useEffect(() => {
@@ -274,8 +287,8 @@ const AppContent: React.FC = () => {
         </div>
       )}
 
-      {/* Main institutional header */}
-      <Header />
+      {/* Main institutional header — only for public routes */}
+      {!isPortalRoute && !isStaffRoute && <Header />}
 
       {/* Page Content Container with React Router Routes */}
       <main className="flex-1">
@@ -390,86 +403,22 @@ const AppContent: React.FC = () => {
             }
           />
           <Route
-            path="/dashboard/license"
+            path="/dashboard/:tab"
             element={
               <VerifiedCustomerRoute>
-                <CustomerPortal initialTab="license" />
+                <CustomerPortal />
               </VerifiedCustomerRoute>
             }
           />
-          <Route
-            path="/dashboard/packages"
-            element={
-              <VerifiedCustomerRoute>
-                <CustomerPortal initialTab="packages" />
-              </VerifiedCustomerRoute>
-            }
-          />
-          <Route
-            path="/dashboard/mt5-binding"
-            element={
-              <VerifiedCustomerRoute>
-                <CustomerPortal initialTab="mt5-binding" />
-              </VerifiedCustomerRoute>
-            }
-          />
-          <Route
-            path="/dashboard/vps"
-            element={
-              <VerifiedCustomerRoute>
-                <CustomerPortal initialTab="vps" />
-              </VerifiedCustomerRoute>
-            }
-          />
-          <Route
-            path="/dashboard/downloads"
-            element={
-              <VerifiedCustomerRoute>
-                <CustomerPortal initialTab="downloads" />
-              </VerifiedCustomerRoute>
-            }
-          />
-          <Route
-            path="/dashboard/billing"
-            element={
-              <VerifiedCustomerRoute>
-                <CustomerPortal initialTab="billing" />
-              </VerifiedCustomerRoute>
-            }
-          />
-          <Route
-            path="/dashboard/support"
-            element={
-              <VerifiedCustomerRoute>
-                <CustomerPortal initialTab="support" />
-              </VerifiedCustomerRoute>
-            }
-          />
-          <Route
-            path="/dashboard/legal"
-            element={
-              <VerifiedCustomerRoute>
-                <CustomerPortal initialTab="legal" />
-              </VerifiedCustomerRoute>
-            }
-          />
-          <Route
-            path="/dashboard/profile"
-            element={
-              <VerifiedCustomerRoute>
-                <CustomerPortal initialTab="profile" />
-              </VerifiedCustomerRoute>
-            }
-          />
-          <Route
-            path="/dashboard/security"
-            element={
-              <VerifiedCustomerRoute>
-                <CustomerPortal initialTab="security" />
-              </VerifiedCustomerRoute>
-            }
-          />
-          <Route path="/wallet-payments" element={<Navigate to="/dashboard/billing" replace />} />
+          <Route path="/portal" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/portal/*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/client" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/client/*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/account" element={<Navigate to="/dashboard/profile" replace />} />
+          <Route path="/account/*" element={<Navigate to="/dashboard/profile" replace />} />
+          <Route path="/trading" element={<Navigate to="/dashboard/trading-monitor" replace />} />
+          <Route path="/trading/*" element={<Navigate to="/dashboard/trading-monitor" replace />} />
+          <Route path="/wallet-payments" element={<Navigate to="/dashboard/subscription" replace />} />
 
           {/* Dedicated Staff Desks */}
           <Route
@@ -530,11 +479,11 @@ const AppContent: React.FC = () => {
         </Routes>
       </main>
 
-      {/* Institutional Legal Footer */}
-      {!isAssistantPage && <Footer />}
+      {/* Institutional Legal Footer — only for public non-assistant routes */}
+      {!isPortalRoute && !isStaffRoute && !isAssistantPage && <Footer />}
 
       {/* Institutional Contact Assistant for Public Pages (Black & Gold) */}
-      {!isAssistantPage && <ContactAssistant />}
+      {!isPortalRoute && !isStaffRoute && !isAssistantPage && <ContactAssistant />}
 
       {/* Dynamic Toast Layer */}
       <ToastContainer />

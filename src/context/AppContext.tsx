@@ -94,6 +94,9 @@ export interface AppContextType {
   currentUser: UserProfile;
   currentRole: UserRole;
   currentRoute: string;
+  isDemoSession: boolean;
+  demoAcknowledged: boolean;
+  acknowledgeDemoSession: () => void;
   setCurrentRoute: (route: string) => void;
   switchRole: (role: UserRole) => void;
   login: (email: string, password?: string) => Promise<boolean> | boolean;
@@ -213,6 +216,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Auth & Roles - initialize to visitor
   const [currentUser, setCurrentUser] = useState<UserProfile>(VISITOR_USER);
   const [currentRole, setCurrentRole] = useState<UserRole>('visitor');
+
+  // Section 64 & 65: Demonstration Session State Management
+  const [isDemoSession, setIsDemoSession] = useState<boolean>(() => {
+    return sessionStorage.getItem('ophireum_is_demo') === 'true';
+  });
+  const [demoAcknowledged, setDemoAcknowledged] = useState<boolean>(() => {
+    return sessionStorage.getItem('ophireum_demo_acknowledged') === 'true';
+  });
+
+  const acknowledgeDemoSession = useCallback(() => {
+    sessionStorage.setItem('ophireum_demo_acknowledged', 'true');
+    setDemoAcknowledged(true);
+  }, []);
 
   // Collections (Hydrated from Firestore with local fallback)
   const [plans, setPlans] = useState<LicensePlan[]>(INITIAL_PLANS);
@@ -476,6 +492,81 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return false;
     }
 
+    // Section 64 & 102: Temporary Protected Demonstration Account Authentication
+    if ((cleanEmail === 'test2026' || cleanEmail === 'test2026@ophireum.demo') && password === 'test2026') {
+      try {
+        const resp = await fetch('/api/v1/demo/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ loginId: 'test2026', password: 'test2026' })
+        });
+        const data = await resp.json();
+        if (data.success) {
+          const demoProfile: UserProfile = {
+            uid: data.user.uid,
+            email: data.user.email,
+            fullName: data.user.fullName,
+            role: 'customer',
+            isEmailVerified: true,
+            mfaEnabled: false,
+            starterPurchased: true,
+            createdAt: '2026-09-14T00:00:00Z',
+            updatedAt: new Date().toISOString(),
+            agreementsAccepted: {
+              termsVersion: '2026.1-DEMO',
+              slaVersion: '2026.1-DEMO',
+              riskDisclosureVersion: '2026.1-DEMO',
+              acceptedAt: new Date().toISOString(),
+              ipAddress: '127.0.0.1 (SIMULATED)'
+            }
+          };
+          setCurrentUser(demoProfile);
+          setCurrentRole('customer');
+          setIsDemoSession(true);
+          sessionStorage.setItem('ophireum_is_demo', 'true');
+          sessionStorage.setItem('ophireum_demo_token', data.token);
+          setCurrentRoute('dashboard');
+          addToast(
+            'Demonstration Session Active',
+            'Authenticated to Demonstration Environment. Operating in isolated simulation environment.',
+            'info'
+          );
+          recordAudit('USER_LOGIN', 'USER', demoProfile.uid, undefined, cleanEmail, 'Demo Simulation Session Authenticated');
+          return true;
+        } else {
+          addToast('Demo Access Restricted', data.error || 'Demo access not allowed', 'critical');
+          return false;
+        }
+      } catch {
+        // Direct resilient fallback for preview / offline environment
+        const demoProfile: UserProfile = {
+          uid: 'demo-test2026-user',
+          email: 'alexander.vance@ophireum.demo',
+          fullName: 'Alexander Vance',
+          role: 'customer',
+          isEmailVerified: true,
+          mfaEnabled: false,
+          starterPurchased: true,
+          createdAt: '2026-09-14T00:00:00Z',
+          updatedAt: new Date().toISOString(),
+          agreementsAccepted: {
+            termsVersion: '2026.1-DEMO',
+            slaVersion: '2026.1-DEMO',
+            riskDisclosureVersion: '2026.1-DEMO',
+            acceptedAt: new Date().toISOString(),
+            ipAddress: '127.0.0.1 (SIMULATED)'
+          }
+        };
+        setCurrentUser(demoProfile);
+        setCurrentRole('customer');
+        setIsDemoSession(true);
+        sessionStorage.setItem('ophireum_is_demo', 'true');
+        setCurrentRoute('dashboard');
+        addToast('Demonstration Session Active', 'Authenticated to Demonstration Environment (Simulation)', 'info');
+        return true;
+      }
+    }
+
     try {
       const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
       const fbUser = userCredential.user;
@@ -687,6 +778,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       await signOut(auth);
     } catch {}
+    sessionStorage.removeItem('ophireum_is_demo');
+    sessionStorage.removeItem('ophireum_demo_token');
+    setIsDemoSession(false);
     setCurrentUser(VISITOR_USER);
     setCurrentRole('visitor');
     setCurrentRoute('home');
@@ -1829,6 +1923,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         currentUser,
         currentRole,
         currentRoute,
+        isDemoSession,
+        demoAcknowledged,
+        acknowledgeDemoSession,
         setCurrentRoute,
         switchRole,
         login,

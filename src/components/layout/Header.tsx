@@ -45,8 +45,11 @@ export const Header: React.FC = () => {
     logout,
     notifications,
     markNotificationRead,
-    settings
+    settings,
+    isDemoSession
   } = useApp();
+
+  const isDemo = isDemoSession || currentUser?.email === 'test2026@ophireum.demo' || (typeof window !== 'undefined' && sessionStorage.getItem('ophireum_is_demo') === 'true');
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -300,7 +303,14 @@ export const Header: React.FC = () => {
             </button>
 
             {/* Authenticated Status Badge */}
-            {currentUser?.uid && currentRole !== 'visitor' ? (
+            {isDemo ? (
+              <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-[#C9A227]/20 border border-[#C9A227]/50 text-[#E4C765]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#E4C765] animate-pulse" />
+                <span className="text-[10px] uppercase font-mono font-bold tracking-wider">
+                  DEMO ENVIRONMENT
+                </span>
+              </div>
+            ) : currentUser?.uid && currentRole !== 'visitor' ? (
               <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#161922] border border-[#2A3040] text-zinc-200">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                 <span className="text-[10px] text-zinc-400 uppercase tracking-wider">Role:</span>

@@ -238,6 +238,28 @@ export const requireAuthenticated = async (req: AuthenticatedRequest, res: Respo
   }
 
   const token = authHeader.split('Bearer ')[1].trim();
+
+  // Section 64 & 93: Server-side Demo Authentication & Isolation Guard
+  if (token.startsWith('demo-token-')) {
+    if (process.env.APP_ENV === 'production') {
+      return res.status(403).json({ success: false, error: 'Demonstration accounts are strictly disabled in production environments.' });
+    }
+    req.user = {
+      uid: 'demo-test2026-user',
+      email: 'test2026@ophireum.demo',
+      email_verified: true,
+      role: 'customer',
+      auth_time: Math.floor(Date.now() / 1000),
+      claims: {
+        environment: 'DEMO',
+        data_source: 'SIMULATION',
+        ocid: 'A7K29P4XQ',
+        isDemo: true
+      }
+    };
+    return next();
+  }
+
   const authAdmin = getAdminAuth();
 
   if (authAdmin) {
@@ -413,6 +435,61 @@ app.get('/api/v1/system/settings', (req: Request, res: Response) => {
     settings: systemSettings,
     plans: DEFAULT_PLANS,
     builds: PRODUCTION_BUILDS
+  });
+});
+
+// Section 64, 93, 94: Temporary Demo Authentication & Server-Side Safety Isolation Switch
+app.post('/api/v1/demo/login', (req: Request, res: Response) => {
+  if (process.env.APP_ENV === 'production') {
+    return res.status(403).json({
+      success: false,
+      error: 'Demonstration account is strictly disabled in production environments.'
+    });
+  }
+
+  const { loginId, password } = req.body;
+  const isMatch = (loginId === 'test2026' || loginId === 'test2026@ophireum.demo') && password === 'test2026';
+
+  if (!isMatch) {
+    return res.status(401).json({
+      success: false,
+      error: 'Invalid demonstration credentials. Use test2026 / test2026.'
+    });
+  }
+
+  // Generate deterministic demo token & session
+  const demoToken = `demo-token-test2026-auth-valid`;
+  return res.status(200).json({
+    success: true,
+    environment: 'DEMO',
+    token: demoToken,
+    user: {
+      uid: 'demo-test2026-user',
+      email: 'test2026@ophireum.demo',
+      fullName: 'Demonstration Test Trader',
+      role: 'customer',
+      isEmailVerified: true,
+      ocid: 'A7K29P4XQ',
+      environment: 'DEMO',
+      data_source: 'SIMULATION'
+    },
+    account: {
+      accountNumber: 'DEMO-2026-001',
+      brokerServer: 'OPHIREUM-DEMO',
+      status: 'CONNECTED — SIMULATED',
+      balance: 25000.00
+    },
+    message: 'Authenticated in OPHIREUM Demonstration Environment. Simulated data only.'
+  });
+});
+
+app.get('/api/v1/demo/status', (req: Request, res: Response) => {
+  const isDemoAllowed = process.env.APP_ENV !== 'production';
+  return res.status(200).json({
+    success: true,
+    isDemoAllowed,
+    environment: isDemoAllowed ? 'DEMO' : 'PRODUCTION',
+    showDemoHelper: isDemoAllowed && process.env.SHOW_DEMO_CREDENTIALS !== 'false'
   });
 });
 

@@ -195,17 +195,17 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ view }) => {
         {view === 'login' && (
           <form onSubmit={handleLogin} className="space-y-4 text-xs">
             <div>
-              <label className="block text-zinc-400 mb-1 font-medium">Email Address</label>
+              <label className="block text-zinc-400 mb-1 font-medium">Login ID / Email Address</label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-zinc-500 absolute left-3 top-3" />
                 <input
                   id="auth-input-email"
-                  type="email"
+                  type="text"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-[#111420] border border-[#232838] rounded-lg pl-9 pr-3 py-2.5 text-zinc-100 placeholder-zinc-600 focus:border-[#C9A227] outline-none transition-colors"
-                  placeholder="name@example.com"
+                  className="w-full bg-[#111420] border border-[#232838] rounded-lg pl-9 pr-3 py-2.5 text-zinc-100 placeholder-zinc-600 focus:border-[#C9A227] outline-none transition-colors font-mono"
+                  placeholder="Demo account or name@example.com"
                 />
               </div>
             </div>
@@ -253,6 +253,34 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ view }) => {
                 </>
               )}
             </button>
+
+            {/* Section 102: Temporary Protected Demonstration Credentials Helper */}
+            {import.meta.env.VITE_APP_ENV !== 'production' && (
+              <div className="mt-4 p-3.5 rounded-xl bg-[#141824] border border-[#2B354C] text-left space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 font-bold text-[#E4C765] text-xs">
+                    <span className="w-2 h-2 rounded-full bg-[#E4C765] animate-pulse" />
+                    <span>DEMO ACCESS (SIMULATION)</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmail('test2026');
+                      setPassword('test2026');
+                    }}
+                    className="px-2.5 py-1 rounded bg-[#C9A227]/20 border border-[#C9A227]/40 text-[#E4C765] hover:bg-[#C9A227]/30 text-[11px] font-mono font-bold transition-colors cursor-pointer shrink-0"
+                  >
+                    Auto-Fill
+                  </button>
+                </div>
+                <div className="text-[11px] text-zinc-300">
+                  Pre-configured testing credentials will be loaded securely into the form fields.
+                </div>
+                <div className="text-[10px] text-zinc-400 leading-tight">
+                  Protected simulation account for QA & client demonstration. Zero real fund connectivity.
+                </div>
+              </div>
+            )}
           </form>
         )}
 
