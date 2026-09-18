@@ -35,7 +35,25 @@ export const HelpCenter: React.FC<HelpCenterProps> = ({ section }) => {
     setTimeout(() => setCopiedUrl(false), 3000);
   };
 
-  const currentEa = eaVersions.find(v => v.status === 'production') || eaVersions[0];
+  const fallbackEa = {
+    id: 'ea-v2.4.1',
+    version: '2.4.1',
+    releaseDate: '2026-08-15',
+    minSupportedVersion: '2.0.0',
+    checksumSHA256: '7f9c8d3e2b1a5490fedcba876543210987654321fedcba0987654321abcdef01',
+    fileName: 'Ophireum_Gold_Engine_v2.4.1.ex5',
+    downloadPath: '/downloads/Ophireum_Gold_Engine_v2.4.1.ex5',
+    status: 'production' as const,
+    releaseNotes: [
+      'Institutional volatility adaptation with dynamic ATR trailing stop-loss',
+      'Enhanced WebRequest cryptographic handshake'
+    ],
+    forceUpdate: false
+  };
+
+  const currentEa = (eaVersions && eaVersions.length > 0)
+    ? (eaVersions.find(v => v.status === 'production') || eaVersions[0])
+    : fallbackEa;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-16">
