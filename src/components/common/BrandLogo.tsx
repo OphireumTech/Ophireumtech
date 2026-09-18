@@ -96,17 +96,17 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
 
       {showText && (
         <span
-          className={`brand-copy flex flex-col justify-center leading-none select-none ${
+          className={`brand-copy flex flex-col justify-center leading-none select-none whitespace-nowrap shrink-0 ${
             iconOnlyOnMobile ? 'hidden sm:flex' : 'flex'
           }`}
         >
           <span
-            className={`brand-name font-cinzel font-bold text-[#F5D77A] tracking-[0.14em] ${titleSize} transition-colors duration-200 group-hover:text-[#FFF4D0]`}
+            className={`brand-name font-cinzel font-bold text-[#F5D77A] tracking-[0.14em] ${titleSize} transition-colors duration-200 group-hover:text-[#FFF4D0] whitespace-nowrap`}
           >
             OPHIREUM
           </span>
           <span
-            className={`brand-subtitle font-mono text-[#A7ADB7] ${subtitleSize} tracking-[0.18em] uppercase mt-1 font-medium`}
+            className={`brand-subtitle font-mono text-[#A7ADB7] ${subtitleSize} tracking-[0.18em] uppercase mt-1 font-medium whitespace-nowrap`}
           >
             {subtitle}
           </span>

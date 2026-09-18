@@ -318,9 +318,9 @@ export const Header: React.FC = () => {
       </div>
 
       {/* Main Navigation Bar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
-        {/* Brand Logo */}
-        <div id="header-brand-logo" className="flex-shrink-0">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-[72px] h-[72px] flex items-center justify-between gap-2 xl:gap-4">
+        {/* Brand Logo with deliberate right spacing */}
+        <div id="header-brand-logo" className="flex-shrink-0 flex items-center mr-2 lg:mr-4 xl:mr-6">
           <BrandLogo
             size="md"
             iconOnlyOnMobile={true}
@@ -329,40 +329,48 @@ export const Header: React.FC = () => {
           />
         </div>
 
+        {/* Subtle decorative divider for visual separation on wide screens */}
+        <div className="hidden 2xl:block h-6 w-px bg-[#232733]/90 mr-2 shrink-0" aria-hidden="true" />
+
         {/* Desktop Links with Single Authoritative Dropdown State */}
         <nav
           ref={navContainerRef}
           aria-label="Main Navigation"
-          className="hidden lg:flex items-center gap-7 text-sm font-medium text-[#F7F3E8]"
+          className="hidden lg:flex items-center gap-1 xl:gap-2.5 2xl:gap-4 text-xs xl:text-sm font-medium text-[#F7F3E8] flex-1 justify-center max-w-4xl min-w-0"
         >
+          {/* Home Link - cleanly styled pill */}
           <button
             type="button"
             onClick={() => handleNav('home')}
-            className={`transition-colors hover:text-[#E4C765] cursor-pointer py-2 ${
-              currentRoute === 'home' || location.pathname === '/' ? 'text-[#E4C765] font-semibold' : ''
+            className={`whitespace-nowrap shrink-0 px-2.5 py-1.5 rounded-lg transition-colors hover:text-[#E4C765] hover:bg-[#151923] cursor-pointer ${
+              currentRoute === 'home' || location.pathname === '/' || location.pathname === '/home'
+                ? 'text-[#E4C765] font-semibold bg-[#151923] border border-[#C9A227]/30'
+                : 'text-zinc-300'
             }`}
           >
             Home
           </button>
 
-          {/* Dedicated Ophireum Assistant Workspace */}
+          {/* Dedicated AI Assistant Workspace */}
           <button
             id="nav-link-assistant"
             type="button"
             onClick={() => handleNav('assistant')}
-            className={`flex items-center gap-1.5 transition-colors hover:text-[#E4C765] cursor-pointer py-2 ${
-              location.pathname === '/assistant' ? 'text-[#E4C765] font-semibold' : ''
+            className={`whitespace-nowrap shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-colors hover:text-[#E4C765] hover:bg-[#151923] cursor-pointer ${
+              location.pathname === '/assistant'
+                ? 'text-[#E4C765] font-semibold bg-[#151923] border border-[#C9A227]/30'
+                : 'text-zinc-300'
             }`}
           >
-            <span>Ophireum Assistant</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#C9A227]/20 border border-[#C9A227]/40 text-[#E4C765] font-bold">
+            <span>AI Assistant</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#C9A227]/20 border border-[#C9A227]/40 text-[#E4C765] font-bold leading-none">
               AI
             </span>
           </button>
 
           {/* 1. TECHNOLOGY MENU (Section 3) */}
           <div
-            className="relative"
+            className="relative shrink-0"
             onMouseEnter={() => handleMenuMouseEnter('product')}
             onMouseLeave={handleMenuMouseLeave}
           >
@@ -375,8 +383,8 @@ export const Header: React.FC = () => {
               aria-controls="nav-dropdown-product"
               onClick={() => handleTriggerClick('product')}
               onKeyDown={(e) => handleTriggerKeyDown(e, 'product')}
-              className={`flex items-center gap-1 hover:text-[#E4C765] transition-colors cursor-pointer py-2 ${
-                activeMenu === 'product' ? 'text-[#E4C765]' : ''
+              className={`whitespace-nowrap flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:text-[#E4C765] hover:bg-[#151923] transition-colors cursor-pointer ${
+                activeMenu === 'product' ? 'text-[#E4C765] bg-[#151923]' : 'text-zinc-300'
               }`}
             >
               <span>Technology</span>
@@ -425,6 +433,21 @@ export const Header: React.FC = () => {
                       OPHIREUM Expert Assistant
                     </div>
                     <div className="text-[11px] text-zinc-400">Automated XAUUSD order execution rules</div>
+                  </div>
+                </button>
+
+                <button
+                  role="menuitem"
+                  type="button"
+                  onClick={() => handleNav('how-it-works')}
+                  className="w-full text-left p-2.5 rounded-lg hover:bg-[#1A1D26] focus:bg-[#1A1D26] focus:outline-none transition-colors flex items-start gap-3 cursor-pointer group"
+                >
+                  <CheckCircle2 className="w-5 h-5 text-[#E4C765] shrink-0 mt-0.5 group-hover:scale-105 transition-transform" />
+                  <div>
+                    <div className="font-medium text-zinc-100 text-xs group-hover:text-white">
+                      How It Works
+                    </div>
+                    <div className="text-[11px] text-zinc-400">Step-by-step MT5 automation workflow</div>
                   </div>
                 </button>
 
@@ -509,19 +532,23 @@ export const Header: React.FC = () => {
           <button
             type="button"
             onClick={() => handleNav('how-it-works')}
-            className={`transition-colors hover:text-[#E4C765] cursor-pointer py-2 ${
-              currentRoute === 'how-it-works' ? 'text-[#E4C765] font-semibold' : ''
+            className={`whitespace-nowrap shrink-0 px-2.5 py-1.5 rounded-lg transition-colors hover:text-[#E4C765] hover:bg-[#151923] cursor-pointer ${
+              currentRoute === 'how-it-works' || location.pathname === '/how-it-works'
+                ? 'text-[#E4C765] font-semibold bg-[#151923] border border-[#C9A227]/30'
+                : 'text-zinc-300'
             }`}
           >
             How It Works
           </button>
 
-          {/* Primary Nav: Risk & Disclosures (Section 3) */}
+          {/* Primary Nav: Risk & Disclosures */}
           <button
             type="button"
             onClick={() => handleNav('risk-disclosure')}
-            className={`transition-colors hover:text-[#E4C765] cursor-pointer py-2 ${
-              currentRoute === 'risk-disclosure' || currentRoute === 'legal-risk' ? 'text-[#E4C765] font-semibold' : ''
+            className={`whitespace-nowrap shrink-0 px-2.5 py-1.5 rounded-lg transition-colors hover:text-[#E4C765] hover:bg-[#151923] cursor-pointer ${
+              currentRoute === 'risk-disclosure' || currentRoute === 'legal-risk' || location.pathname === '/risk-disclosure'
+                ? 'text-[#E4C765] font-semibold bg-[#151923] border border-[#C9A227]/30'
+                : 'text-zinc-300'
             }`}
           >
             Risk & Disclosures
@@ -529,7 +556,7 @@ export const Header: React.FC = () => {
 
           {/* 2. ABOUT MENU */}
           <div
-            className="relative"
+            className="relative shrink-0"
             onMouseEnter={() => handleMenuMouseEnter('company')}
             onMouseLeave={handleMenuMouseLeave}
           >
@@ -542,8 +569,8 @@ export const Header: React.FC = () => {
               aria-controls="nav-dropdown-company"
               onClick={() => handleTriggerClick('company')}
               onKeyDown={(e) => handleTriggerKeyDown(e, 'company')}
-              className={`flex items-center gap-1 hover:text-[#E4C765] transition-colors cursor-pointer py-2 ${
-                activeMenu === 'company' ? 'text-[#E4C765]' : ''
+              className={`whitespace-nowrap flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:text-[#E4C765] hover:bg-[#151923] transition-colors cursor-pointer ${
+                activeMenu === 'company' ? 'text-[#E4C765] bg-[#151923]' : 'text-zinc-300'
               }`}
             >
               <span>About</span>
@@ -622,7 +649,7 @@ export const Header: React.FC = () => {
 
           {/* 3. SUPPORT MENU */}
           <div
-            className="relative"
+            className="relative shrink-0"
             onMouseEnter={() => handleMenuMouseEnter('help')}
             onMouseLeave={handleMenuMouseLeave}
           >
@@ -635,8 +662,8 @@ export const Header: React.FC = () => {
               aria-controls="nav-dropdown-help"
               onClick={() => handleTriggerClick('help')}
               onKeyDown={(e) => handleTriggerKeyDown(e, 'help')}
-              className={`flex items-center gap-1 hover:text-[#E4C765] transition-colors cursor-pointer py-2 ${
-                activeMenu === 'help' ? 'text-[#E4C765]' : ''
+              className={`whitespace-nowrap flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:text-[#E4C765] hover:bg-[#151923] transition-colors cursor-pointer ${
+                activeMenu === 'help' ? 'text-[#E4C765] bg-[#151923]' : 'text-zinc-300'
               }`}
             >
               <span>Support</span>
@@ -715,7 +742,7 @@ export const Header: React.FC = () => {
         </nav>
 
         {/* Right CTA / Notification Drawer / Portal Switcher */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {/* Notifications Button & Drawer */}
           <div ref={notifContainerRef} className="relative">
             <button
@@ -779,12 +806,12 @@ export const Header: React.FC = () => {
 
           {/* Portals depending on role */}
           {currentRole === 'visitor' ? (
-            <div className="hidden sm:flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2 shrink-0">
               <button
                 id="header-btn-login"
                 type="button"
                 onClick={() => handleNav('login')}
-                className="px-3.5 py-2 text-xs font-semibold text-zinc-200 hover:text-white transition-colors cursor-pointer"
+                className="whitespace-nowrap px-3.5 py-2 text-xs font-semibold text-zinc-200 hover:text-white transition-colors cursor-pointer"
               >
                 Log In
               </button>
@@ -792,33 +819,33 @@ export const Header: React.FC = () => {
                 id="header-btn-register"
                 type="button"
                 onClick={() => handleNav('register')}
-                className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#C9A227] to-[#E4C765] text-[#08090B] font-bold text-xs shadow-md shadow-[#C9A227]/20 hover:brightness-110 transition-all cursor-pointer"
+                className="whitespace-nowrap px-4 py-2 rounded-lg bg-gradient-to-r from-[#C9A227] to-[#E4C765] text-[#08090B] font-bold text-xs shadow-md shadow-[#C9A227]/20 hover:brightness-110 transition-all cursor-pointer"
               >
                 Get Started
               </button>
             </div>
           ) : currentRole === 'customer' ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <button
                 id="header-btn-dashboard"
                 type="button"
                 onClick={() => handleNav('dashboard')}
-                className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#C9A227] to-[#E4C765] text-[#08090B] font-bold text-xs shadow-md shadow-[#C9A227]/20 hover:brightness-110 transition-all cursor-pointer flex items-center gap-1.5"
+                className="whitespace-nowrap px-4 py-2 rounded-lg bg-gradient-to-r from-[#C9A227] to-[#E4C765] text-[#08090B] font-bold text-xs shadow-md shadow-[#C9A227]/20 hover:brightness-110 transition-all cursor-pointer flex items-center gap-1.5"
               >
-                <Layers className="w-3.5 h-3.5" />
+                <Layers className="w-3.5 h-3.5 shrink-0" />
                 <span>Customer Portal</span>
               </button>
               <button
                 type="button"
                 onClick={logout}
-                className="p-2 rounded-lg bg-[#111318] hover:bg-rose-950/40 border border-[#232733] hover:border-rose-800 text-zinc-400 hover:text-rose-300 transition-colors cursor-pointer"
+                className="p-2 rounded-lg bg-[#111318] hover:bg-rose-950/40 border border-[#232733] hover:border-rose-800 text-zinc-400 hover:text-rose-300 transition-colors cursor-pointer shrink-0"
                 title="Log Out"
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-4 h-4 shrink-0" />
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <button
                 id="header-btn-staff-portal"
                 type="button"
@@ -828,9 +855,9 @@ export const Header: React.FC = () => {
                   else if (currentRole === 'finance_reviewer') handleNav('finance-dashboard');
                   else if (currentRole === 'support_agent') handleNav('support-dashboard');
                 }}
-                className="px-4 py-2 rounded-lg bg-[#141824] border border-[#2B354C] text-[#E4C765] font-bold text-xs hover:bg-[#1A2234] transition-all cursor-pointer flex items-center gap-1.5"
+                className="whitespace-nowrap px-4 py-2 rounded-lg bg-[#141824] border border-[#2B354C] text-[#E4C765] font-bold text-xs hover:bg-[#1A2234] transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
               >
-                <Shield className="w-3.5 h-3.5 text-[#C9A227]" />
+                <Shield className="w-3.5 h-3.5 text-[#C9A227] shrink-0" />
                 <span>
                   {currentRole === 'super_admin'
                     ? 'Super Admin'
@@ -844,10 +871,10 @@ export const Header: React.FC = () => {
               <button
                 type="button"
                 onClick={logout}
-                className="p-2 rounded-lg bg-[#111318] hover:bg-rose-950/40 border border-[#232733] hover:border-rose-800 text-zinc-400 hover:text-rose-300 transition-colors cursor-pointer"
+                className="p-2 rounded-lg bg-[#111318] hover:bg-rose-950/40 border border-[#232733] hover:border-rose-800 text-zinc-400 hover:text-rose-300 transition-colors cursor-pointer shrink-0"
                 title="Log Out"
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-4 h-4 shrink-0" />
               </button>
             </div>
           )}
