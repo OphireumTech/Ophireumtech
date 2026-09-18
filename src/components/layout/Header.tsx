@@ -360,7 +360,7 @@ export const Header: React.FC = () => {
             </span>
           </button>
 
-          {/* 1. PRODUCT MENU */}
+          {/* 1. TECHNOLOGY MENU (Section 3) */}
           <div
             className="relative"
             onMouseEnter={() => handleMenuMouseEnter('product')}
@@ -379,7 +379,7 @@ export const Header: React.FC = () => {
                 activeMenu === 'product' ? 'text-[#E4C765]' : ''
               }`}
             >
-              <span>Product</span>
+              <span>Technology</span>
               <ChevronDown
                 className={`w-3.5 h-3.5 text-zinc-400 transition-transform duration-150 ${
                   activeMenu === 'product' ? 'rotate-180 text-[#E4C765]' : ''
@@ -398,6 +398,21 @@ export const Header: React.FC = () => {
                 onKeyDown={handleDropdownKeyDown}
                 className="absolute top-full left-0 mt-1.5 w-72 max-w-[calc(100vw-32px)] bg-[#111318] border border-[#232733] rounded-xl shadow-[0_12px_36px_rgba(0,0,0,0.85),0_0_20px_rgba(201,162,39,0.12)] p-2 z-40 space-y-1 animate-in fade-in slide-in-from-top-1 duration-150"
               >
+                <button
+                  role="menuitem"
+                  type="button"
+                  onClick={() => handleNav('product-overview')}
+                  className="w-full text-left p-2.5 rounded-lg hover:bg-[#1A1D26] focus:bg-[#1A1D26] focus:outline-none transition-colors flex items-start gap-3 cursor-pointer group"
+                >
+                  <Cpu className="w-5 h-5 text-[#E4C765] shrink-0 mt-0.5 group-hover:scale-105 transition-transform" />
+                  <div>
+                    <div className="font-medium text-zinc-100 text-xs group-hover:text-white">
+                      Technology Architecture
+                    </div>
+                    <div className="text-[11px] text-zinc-400">Complete technology stack overview</div>
+                  </div>
+                </button>
+
                 <button
                   role="menuitem"
                   type="button"
@@ -501,17 +516,18 @@ export const Header: React.FC = () => {
             How It Works
           </button>
 
+          {/* Primary Nav: Risk & Disclosures (Section 3) */}
           <button
             type="button"
-            onClick={() => handleNav('pricing')}
+            onClick={() => handleNav('risk-disclosure')}
             className={`transition-colors hover:text-[#E4C765] cursor-pointer py-2 ${
-              currentRoute === 'pricing' ? 'text-[#E4C765] font-semibold' : ''
+              currentRoute === 'risk-disclosure' || currentRoute === 'legal-risk' ? 'text-[#E4C765] font-semibold' : ''
             }`}
           >
-            Pricing
+            Risk & Disclosures
           </button>
 
-          {/* 2. COMPANY MENU */}
+          {/* 2. ABOUT MENU */}
           <div
             className="relative"
             onMouseEnter={() => handleMenuMouseEnter('company')}
@@ -530,7 +546,7 @@ export const Header: React.FC = () => {
                 activeMenu === 'company' ? 'text-[#E4C765]' : ''
               }`}
             >
-              <span>Company</span>
+              <span>About</span>
               <ChevronDown
                 className={`w-3.5 h-3.5 text-zinc-400 transition-transform duration-150 ${
                   activeMenu === 'company' ? 'rotate-180 text-[#E4C765]' : ''
@@ -556,6 +572,17 @@ export const Header: React.FC = () => {
                   className="w-full text-left p-2.5 rounded-lg hover:bg-[#1A1D26] focus:bg-[#1A1D26] focus:outline-none text-xs font-medium text-zinc-200 hover:text-white transition-colors cursor-pointer"
                 >
                   About OPHIREUM
+                </button>
+                <button
+                  role="menuitem"
+                  type="button"
+                  onClick={() => handleNav('regulatory-status')}
+                  className="w-full text-left p-2.5 rounded-lg hover:bg-[#1A1D26] focus:bg-[#1A1D26] focus:outline-none text-xs font-medium text-[#E4C765] transition-colors cursor-pointer flex items-center justify-between"
+                >
+                  <span>Regulatory Status</span>
+                  <span className="text-[9px] px-1 py-0.2 rounded bg-amber-950 border border-amber-800 text-amber-300">
+                    Verified
+                  </span>
                 </button>
                 <button
                   role="menuitem"
@@ -593,7 +620,7 @@ export const Header: React.FC = () => {
             )}
           </div>
 
-          {/* 3. HELP MENU (Right-aligned to avoid viewport right overflow) */}
+          {/* 3. SUPPORT MENU */}
           <div
             className="relative"
             onMouseEnter={() => handleMenuMouseEnter('help')}
@@ -612,7 +639,7 @@ export const Header: React.FC = () => {
                 activeMenu === 'help' ? 'text-[#E4C765]' : ''
               }`}
             >
-              <span>Help</span>
+              <span>Support</span>
               <ChevronDown
                 className={`w-3.5 h-3.5 text-zinc-400 transition-transform duration-150 ${
                   activeMenu === 'help' ? 'rotate-180 text-[#E4C765]' : ''
@@ -654,6 +681,17 @@ export const Header: React.FC = () => {
                   className="w-full text-left p-2.5 rounded-lg hover:bg-[#1A1D26] focus:bg-[#1A1D26] focus:outline-none text-xs font-medium text-zinc-200 hover:text-white transition-colors cursor-pointer"
                 >
                   MT5 WebRequest Setup
+                </button>
+                <button
+                  role="menuitem"
+                  type="button"
+                  onClick={() => handleNav('complaints')}
+                  className="w-full text-left p-2.5 rounded-lg hover:bg-[#1A1D26] focus:bg-[#1A1D26] focus:outline-none text-xs font-medium text-[#E4C765] transition-colors cursor-pointer flex items-center justify-between"
+                >
+                  <span>Complaints & Disputes</span>
+                  <span className="text-[9px] px-1 py-0.2 rounded bg-zinc-800 text-zinc-300">
+                    Case Desk
+                  </span>
                 </button>
                 <button
                   role="menuitem"
@@ -866,17 +904,17 @@ export const Header: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={() => handleNav('pricing')}
-              className="p-2.5 text-left bg-[#11141D] hover:bg-[#181D2A] border border-zinc-800/60 rounded-xl font-medium text-zinc-200 cursor-pointer"
-            >
-              Pricing Plans
-            </button>
-            <button
-              type="button"
               onClick={() => handleNav('how-it-works')}
               className="p-2.5 text-left bg-[#11141D] hover:bg-[#181D2A] border border-zinc-800/60 rounded-xl font-medium text-zinc-200 cursor-pointer"
             >
               How It Works
+            </button>
+            <button
+              type="button"
+              onClick={() => handleNav('risk-disclosure')}
+              className="p-2.5 text-left bg-[#11141D] hover:bg-[#181D2A] border border-zinc-800/60 rounded-xl font-medium text-[#E4C765] cursor-pointer"
+            >
+              Risk & Disclosures
             </button>
             <button
               type="button"
@@ -887,7 +925,7 @@ export const Header: React.FC = () => {
             </button>
           </div>
 
-          {/* Accordion 1: Product Capabilities */}
+          {/* Accordion 1: Technology Stack */}
           <div className="border border-zinc-800/80 rounded-xl bg-[#0E1118] overflow-hidden text-xs">
             <button
               type="button"
@@ -896,7 +934,7 @@ export const Header: React.FC = () => {
             >
               <div className="flex items-center gap-2">
                 <Cpu className="w-4 h-4 text-[#E4C765]" />
-                <span>Product Capabilities</span>
+                <span>Technology Stack</span>
               </div>
               <ChevronDown
                 className={`w-4 h-4 text-zinc-400 transition-transform ${
@@ -907,6 +945,13 @@ export const Header: React.FC = () => {
 
             {mobileSection === 'product' && (
               <div className="px-3 pb-3 space-y-1.5 pt-1 border-t border-zinc-800/60 text-zinc-300">
+                <button
+                  type="button"
+                  onClick={() => handleNav('product-overview')}
+                  className="w-full p-2 text-left hover:bg-zinc-800/60 rounded-lg text-[11px] cursor-pointer"
+                >
+                  Technology Architecture Overview
+                </button>
                 <button
                   type="button"
                   onClick={() => handleNav('product-ea')}
@@ -953,7 +998,7 @@ export const Header: React.FC = () => {
             )}
           </div>
 
-          {/* Accordion 2: Company & Governance */}
+          {/* Accordion 2: About & Governance */}
           <div className="border border-zinc-800/80 rounded-xl bg-[#0E1118] overflow-hidden text-xs">
             <button
               type="button"
@@ -962,7 +1007,7 @@ export const Header: React.FC = () => {
             >
               <div className="flex items-center gap-2">
                 <Shield className="w-4 h-4 text-[#E4C765]" />
-                <span>Company & Governance</span>
+                <span>About & Governance</span>
               </div>
               <ChevronDown
                 className={`w-4 h-4 text-zinc-400 transition-transform ${
@@ -979,6 +1024,16 @@ export const Header: React.FC = () => {
                   className="w-full p-2 text-left hover:bg-zinc-800/60 rounded-lg text-[11px] cursor-pointer"
                 >
                   About OPHIREUM
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleNav('regulatory-status')}
+                  className="w-full p-2 text-left hover:bg-zinc-800/60 rounded-lg text-[11px] cursor-pointer text-[#E4C765] font-medium flex items-center justify-between"
+                >
+                  <span>Regulatory Status & Demarcation</span>
+                  <span className="text-[9px] px-1 py-0.2 rounded bg-amber-950 border border-amber-800 text-amber-300">
+                    Verified
+                  </span>
                 </button>
                 <button
                   type="button"
@@ -1005,7 +1060,7 @@ export const Header: React.FC = () => {
             )}
           </div>
 
-          {/* Accordion 3: Help & Documentation */}
+          {/* Accordion 3: Support & Help */}
           <div className="border border-zinc-800/80 rounded-xl bg-[#0E1118] overflow-hidden text-xs">
             <button
               type="button"
@@ -1014,7 +1069,7 @@ export const Header: React.FC = () => {
             >
               <div className="flex items-center gap-2">
                 <HelpCircle className="w-4 h-4 text-[#E4C765]" />
-                <span>Help & Support</span>
+                <span>Support & Help</span>
               </div>
               <ChevronDown
                 className={`w-4 h-4 text-zinc-400 transition-transform ${
@@ -1045,6 +1100,14 @@ export const Header: React.FC = () => {
                   className="w-full p-2 text-left hover:bg-zinc-800/60 rounded-lg text-[11px] cursor-pointer"
                 >
                   MT5 WebRequest Setup
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleNav('complaints')}
+                  className="w-full p-2 text-left hover:bg-zinc-800/60 rounded-lg text-[11px] cursor-pointer text-[#E4C765] font-medium flex items-center justify-between"
+                >
+                  <span>Complaints & Dispute Handling</span>
+                  <span className="text-[9px] px-1 py-0.2 rounded bg-zinc-800 text-zinc-300">Case Desk</span>
                 </button>
                 <button
                   type="button"

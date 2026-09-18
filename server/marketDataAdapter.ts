@@ -86,7 +86,7 @@ export class LiveFixMarketAdapter implements IMarketDataAdapter {
       requiredCredentials: [],
       lastSuccessfulUpdate: new Date().toISOString(),
       cacheAgeSeconds: 0,
-      supportedInstruments: ['XAUUSD', 'EURUSD', 'GBPUSD', 'USDJPY', 'DXY', 'US10Y', 'BRENT']
+      supportedInstruments: ['XAUUSD', 'XAUUSD.a', 'XAUUSDm', 'XAUUSD.ecn', 'GOLD']
     };
   }
 }
@@ -103,7 +103,6 @@ export class StandbyMarketAdapter implements IMarketDataAdapter {
   private lastSnapshotTime = new Date().toISOString();
 
   public async getQuotes(): Promise<MarketTickerQuote[]> {
-    const now = new Date().toISOString();
     return [
       {
         symbol: 'XAUUSD',
@@ -123,52 +122,52 @@ export class StandbyMarketAdapter implements IMarketDataAdapter {
         sourceUrl: 'https://ophireum.biz'
       },
       {
-        symbol: 'DXY',
-        name: 'US Dollar Index (Daily Reference)',
-        price: 104.22,
-        change24h: -0.28,
-        changePct24h: -0.27,
-        high24h: 104.55,
-        low24h: 104.05,
-        bid: 104.21,
-        ask: 104.23,
-        spread: 0.02,
-        provider: 'Federal Reserve Macro Economic Series',
+        symbol: 'XAUUSD.BID',
+        name: 'Spot Gold Bid / Ask Spread',
+        price: 2908.30,
+        change24h: 14.80,
+        changePct24h: 0.51,
+        high24h: 2908.60,
+        low24h: 2908.30,
+        bid: 2908.30,
+        ask: 2908.60,
+        spread: 0.30,
+        provider: 'Interbank Gold Liquidity Reference',
         status: 'cached',
         timestamp: this.lastSnapshotTime,
-        category: 'forex'
+        category: 'gold'
       },
       {
-        symbol: 'EURUSD',
-        name: 'Euro / US Dollar',
-        price: 1.0842,
-        change24h: 0.0031,
-        changePct24h: 0.29,
-        high24h: 1.0865,
-        low24h: 1.0815,
-        bid: 1.0841,
-        ask: 1.0843,
-        spread: 0.0002,
-        provider: 'Interbank Benchmark Reference',
+        symbol: 'XAUUSD.SESSION',
+        name: 'Gold Trading Session Status',
+        price: 2908.45,
+        change24h: 0.0,
+        changePct24h: 0.0,
+        high24h: 2924.10,
+        low24h: 2886.30,
+        bid: 2908.30,
+        ask: 2908.60,
+        spread: 0.30,
+        provider: 'Global Gold Trading Desk Schedule',
         status: 'cached',
         timestamp: this.lastSnapshotTime,
-        category: 'forex'
+        category: 'gold'
       },
       {
-        symbol: 'US10Y',
-        name: 'US 10-Year Treasury Yield',
-        price: 4.285,
-        change24h: -0.042,
-        changePct24h: -0.97,
-        high24h: 4.331,
-        low24h: 4.270,
-        bid: 4.284,
-        ask: 4.286,
-        spread: 0.002,
-        provider: 'US Treasury Reference Series',
+        symbol: 'XAUUSD.VOL',
+        name: 'Gold Average True Range (ATR 14D)',
+        price: 28.40,
+        change24h: 1.20,
+        changePct24h: 4.41,
+        high24h: 37.80,
+        low24h: 24.10,
+        bid: 28.35,
+        ask: 28.45,
+        spread: 0.10,
+        provider: 'Quantitative Gold Volatility Index',
         status: 'cached',
         timestamp: this.lastSnapshotTime,
-        category: 'bonds'
+        category: 'gold'
       }
     ];
   }
@@ -186,7 +185,7 @@ export class StandbyMarketAdapter implements IMarketDataAdapter {
       ],
       lastSuccessfulUpdate: this.lastSnapshotTime,
       cacheAgeSeconds: Math.floor((Date.now() - new Date(this.lastSnapshotTime).getTime()) / 1000),
-      supportedInstruments: ['XAUUSD', 'EURUSD', 'GBPUSD', 'USDJPY', 'DXY', 'US10Y', 'BRENT']
+      supportedInstruments: ['XAUUSD', 'XAUUSD.a', 'XAUUSDm', 'XAUUSD.ecn', 'GOLD']
     };
   }
 }

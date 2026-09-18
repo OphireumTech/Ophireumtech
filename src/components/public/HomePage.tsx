@@ -6,6 +6,7 @@
 
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { PerformanceClaimDisclosure } from '../compliance/PerformanceClaimReview';
 import {
   Shield,
   Cpu,
@@ -80,45 +81,47 @@ export const HomePage: React.FC = () => {
               style={{ filter: 'drop-shadow(0 0 1px rgba(255, 232, 160, 0.65))' }}
             />
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>OPHIREUM Multimedia Production • Automated Gold Infrastructure</span>
+            <span>OPHIREUM Multimedia Production • Financial Technology Software</span>
           </div>
 
-          {/* Headline */}
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-display font-extrabold text-white tracking-tight leading-[1.15] max-w-4xl mx-auto">
-            Disciplined Gold Trading Automation for <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E4C765] via-[#C9A227] to-[#F7F3E8]">MetaTrader 5</span>
-          </h1>
+          {/* Headline - Clean & Institutional */}
+          <div className="space-y-2 max-w-4xl mx-auto">
+            <div className="text-xs sm:text-sm font-mono tracking-widest text-[#E4C765] uppercase font-bold">
+              OPHIREUM Expert Assistant
+            </div>
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-display font-extrabold text-white tracking-tight leading-[1.15]">
+              Automated Execution Technology for <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E4C765] via-[#C9A227] to-[#F7F3E8]">XAUUSD</span>
+            </h1>
+          </div>
 
           {/* Supporting Copy */}
           <p className="text-base sm:text-lg text-zinc-300 max-w-3xl mx-auto leading-relaxed font-normal">
-            Deploy the OPHIREUM Expert Assistant through a secure, account-bound licence designed exclusively for XAUUSD. Manage your licence, MT5 account, payments, VPS readiness, operational controls, and support from one structured platform.
+            Ophireum provides software technology designed to execute configured trading rules through supported trading infrastructure. Exclusively engineered for gold (XAUUSD) on MetaTrader 5 with cryptographically bound single-account licensing.
           </p>
 
-          {/* CTA Buttons */}
+          {/* CTA Buttons - Section 4 Specs */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
             <button
-              id="hero-btn-plans"
-              onClick={() => {
-                const el = document.getElementById('plans-section');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-              }}
+              id="hero-btn-explore-technology"
+              onClick={() => setCurrentRoute('how-it-works')}
               className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-gradient-to-r from-[#C9A227] to-[#E4C765] text-[#08090B] font-bold text-sm tracking-wide shadow-lg shadow-[#C9A227]/25 hover:brightness-110 transition-all cursor-pointer flex items-center justify-center gap-2"
             >
-              <span>View Licence Plans</span>
+              <span>Explore the Technology</span>
               <ArrowRight className="w-4 h-4" />
             </button>
 
             <button
-              id="hero-btn-how-it-works"
-              onClick={() => setCurrentRoute('how-it-works')}
+              id="hero-btn-client-login"
+              onClick={() => setCurrentRoute(currentRole === 'visitor' ? 'login' : 'dashboard')}
               className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-[#111318] hover:bg-[#1A1E29] border border-[#2A3040] text-zinc-200 hover:text-white font-semibold text-sm transition-all cursor-pointer flex items-center justify-center gap-2"
             >
-              <span>See How It Works</span>
+              <span>{currentRole === 'visitor' ? 'Client Login' : 'Customer Portal'}</span>
             </button>
           </div>
 
           {/* Trust Labels */}
           <div className="pt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-4 text-xs text-zinc-400">
-            {['XAUUSD Only', 'MetaTrader 5', 'Account-Bound Licensing', 'Risk-Oriented Controls', 'Secure Customer Dashboard'].map((label, idx) => (
+            {['XAUUSD Only', 'MetaTrader 5 Native', 'Account-Bound Licensing', 'Mandatory Stop-Loss Rules', 'Zero Fund Custody'].map((label, idx) => (
               <div key={idx} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0F1219]/80 border border-[#1F2533]">
                 <CheckCircle2 className="w-3.5 h-3.5 text-[#C9A227]" />
                 <span className="font-medium text-zinc-300">{label}</span>
@@ -128,40 +131,74 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* What Is OPHIREUM Section */}
+      {/* Section 5: "What Ophireum Does" Section - Technology vs Regulated Financial Services */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-[#0D1017] border border-[#1E2330] rounded-2xl p-8 sm:p-12 space-y-8">
           <div className="max-w-3xl space-y-3">
             <div className="text-xs font-bold uppercase tracking-widest text-[#C9A227]">
-              Company Positioning
+              Scope of Operations & Regulatory Demarcation
             </div>
             <h2 className="text-2xl sm:text-3xl font-display font-bold text-white">
-              What Is OPHIREUM?
+              Software Technology vs. Regulated Financial Services
             </h2>
             <p className="text-zinc-300 text-sm sm:text-base leading-relaxed">
-              OPHIREUM Multimedia Production is positioned as a technology and software-licensing company focused on automated gold-trading workflows for MetaTrader 5. The company combines an Expert Advisor, secure account-bound licensing, digital billing, customer controls, operational reporting, and technical support in one coordinated ecosystem.
+              Ophireum develops, maintains, and licenses trading software. We establish a clear, unequivocal legal boundary between software automation tools and regulated banking or advisory services.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-zinc-800/80 text-xs sm:text-sm">
-            <div className="p-5 rounded-xl bg-[#111520] border border-zinc-800 space-y-2">
-              <div className="font-semibold text-zinc-100 flex items-center gap-2">
-                <Terminal className="w-4 h-4 text-[#E4C765]" />
-                Customer Broker Environment
+            <div className="p-6 rounded-xl bg-[#111520] border border-zinc-800 space-y-4">
+              <div className="font-bold text-zinc-100 flex items-center gap-2 text-sm">
+                <Terminal className="w-5 h-5 text-[#E4C765]" />
+                What Ophireum Does (Technology Licensing)
               </div>
-              <p className="text-zinc-400 leading-relaxed text-xs">
-                The actual Expert Advisor runs directly inside the customer’s MT5 terminal and broker account. Trading capital, broker credentials, deposit balances, and withdrawals remain entirely with the user’s designated regulated brokerage.
-              </p>
+              <ul className="space-y-2 text-xs text-zinc-300">
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>Develops and licenses the compiled MetaTrader 5 Expert Advisor (.ex5) software binary.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>Operates secure WebRequest authentication and single-account cryptographic binding APIs.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>Provides pre-configured risk parameters (mandatory stop-loss, max lot size limit, spread thresholds).</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>Coordinates low-latency Windows Server VPS infrastructure directly adjacent to major liquidity centers.</span>
+                </li>
+              </ul>
             </div>
 
-            <div className="p-5 rounded-xl bg-[#111520] border border-zinc-800 space-y-2">
-              <div className="font-semibold text-zinc-100 flex items-center gap-2">
-                <Shield className="w-4 h-4 text-[#E4C765]" />
-                OPHIREUM Platform Management
+            <div className="p-6 rounded-xl bg-[#130E14] border border-rose-900/40 space-y-4">
+              <div className="font-bold text-rose-300 flex items-center gap-2 text-sm">
+                <AlertTriangle className="w-5 h-5 text-rose-400" />
+                What Ophireum Is NOT (Statutory Disclosures)
               </div>
-              <p className="text-zinc-400 leading-relaxed text-xs">
-                The OPHIREUM platform coordinates software authorization, cryptographic account binding, digital billing, telemetry monitoring, WebRequest delivery, VPS support, and authorized emergency operational controls.
-              </p>
+              <ul className="space-y-2 text-xs text-zinc-300">
+                <li className="flex items-start gap-2">
+                  <span className="text-rose-400 font-bold">✕</span>
+                  <span>Ophireum is <strong className="text-white">NOT</strong> an investment manager or asset manager.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-rose-400 font-bold">✕</span>
+                  <span>Ophireum is <strong className="text-white">NOT</strong> a financial adviser or wealth consultant.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-rose-400 font-bold">✕</span>
+                  <span>Ophireum is <strong className="text-white">NOT</strong> a broker, dealer, or financial intermediary.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-rose-400 font-bold">✕</span>
+                  <span>Ophireum is <strong className="text-white">NOT</strong> a fund manager, portfolio manager, or fiduciary.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-rose-400 font-bold">✕</span>
+                  <span>Ophireum does <strong className="text-white">NOT</strong> hold, custody, or transmit customer trading deposits.</span>
+                </li>
+              </ul>
             </div>
           </div>
         </div>
@@ -415,6 +452,11 @@ export const HomePage: React.FC = () => {
           <p>
             <span className="text-zinc-200 font-semibold">Technical Parameter Note:</span> Suggested equity ranges represent technical guidance for baseline risk configuration and do not constitute a profit forecast. Risk percentages do not limit or guarantee maximum drawdown during abnormal market volatility. Signals refer to algorithmic strategy confluence filters executed on tick data.
           </p>
+        </div>
+
+        {/* Mandatory Statutory Performance & Hypothetical Disclosure (Section 7 & 8) */}
+        <div className="max-w-4xl mx-auto">
+          <PerformanceClaimDisclosure claimId="CLM-XAU-2026-01" showFullDetails={true} />
         </div>
       </section>
 

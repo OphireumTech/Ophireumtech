@@ -146,10 +146,55 @@ export const Footer: React.FC = () => {
             </ul>
           </div>
 
+          {/* Company & Governance */}
+          <div className="space-y-3">
+            <div className="text-xs font-semibold uppercase tracking-wider text-zinc-200">Company & Governance</div>
+            <ul className="space-y-2 text-xs">
+              <li>
+                <button onClick={() => handleNav('about')} className="hover:text-[#E4C765] transition-colors">
+                  About OPHIREUM
+                </button>
+              </li>
+              <li>
+                <button onClick={() => handleNav('regulatory-status')} className="hover:text-[#E4C765] transition-colors text-[#E4C765] flex items-center gap-1.5">
+                  <span>Regulatory Status</span>
+                  <span className="text-[9px] px-1 py-0.2 rounded bg-amber-950 border border-amber-800 text-amber-300">
+                    Verified
+                  </span>
+                </button>
+              </li>
+              <li>
+                <button onClick={() => handleNav('vision-mission')} className="hover:text-[#E4C765] transition-colors">
+                  Vision & Mission
+                </button>
+              </li>
+              <li>
+                <button onClick={() => handleNav('core-values')} className="hover:text-[#E4C765] transition-colors">
+                  Core Principles
+                </button>
+              </li>
+              <li>
+                <button onClick={() => handleNav('responsible-tech')} className="hover:text-[#E4C765] transition-colors">
+                  Responsible Technology
+                </button>
+              </li>
+              <li>
+                <button onClick={() => handleNav('contact')} className="hover:text-[#E4C765] transition-colors">
+                  Technical Support & Inquiries
+                </button>
+              </li>
+            </ul>
+          </div>
+
           {/* Legal Center Links */}
           <div className="space-y-3">
             <div className="text-xs font-semibold uppercase tracking-wider text-zinc-200">Legal Center</div>
             <ul className="space-y-2 text-xs">
+              <li>
+                <button onClick={() => handleNav('legal-risk')} className="hover:text-[#E4C765] transition-colors text-[#E4C765] font-medium">
+                  Trading Risk Disclosure
+                </button>
+              </li>
               <li>
                 <button onClick={() => handleNav('legal-terms')} className="hover:text-[#E4C765] transition-colors">
                   Terms of Use
@@ -157,12 +202,7 @@ export const Footer: React.FC = () => {
               </li>
               <li>
                 <button onClick={() => handleNav('legal-sla')} className="hover:text-[#E4C765] transition-colors">
-                  Software Licence Agreement
-                </button>
-              </li>
-              <li>
-                <button onClick={() => handleNav('legal-risk')} className="hover:text-[#E4C765] transition-colors text-[#E4C765]">
-                  Trading Risk Disclosure
+                  Software Licence Agreement (EULA)
                 </button>
               </li>
               <li>
@@ -180,21 +220,34 @@ export const Footer: React.FC = () => {
                   Acceptable Use Policy
                 </button>
               </li>
+              <li>
+                <button onClick={() => handleNav('complaints')} className="hover:text-[#E4C765] transition-colors">
+                  Complaints & Grievance Desk
+                </button>
+              </li>
+              <li>
+                <button onClick={() => handleNav('accessibility')} className="hover:text-[#E4C765] transition-colors">
+                  Accessibility Statement (WCAG 2.1)
+                </button>
+              </li>
             </ul>
           </div>
         </div>
 
-        {/* Mandatory Risk Notice Box */}
+        {/* Mandatory Statutory Risk Notice & Regulatory Demarcation Box */}
         <div className="bg-[#0C0E14] border border-[#232733] rounded-xl p-5 space-y-3">
           <div className="flex items-center gap-2 text-xs font-semibold text-[#E4C765]">
             <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
-            <span>CRITICAL RISK AND OPERATIONAL NOTICE</span>
+            <span>MANDATORY STATUTORY RISK DISCLOSURE & REGULATORY STATUS</span>
           </div>
           <p className="text-zinc-300 text-xs leading-relaxed">
-            No responsible trading system can guarantee profits. Automated tools execute programmed rules and may generate losses, including the loss of some or all trading capital. Market gaps, volatility, spread expansion, latency, slippage, broker execution, incorrect configuration, and connectivity failures can materially affect outcomes.
+            <strong className="text-white">High-Risk Investment Warning:</strong> Trading leveraged foreign exchange contracts, contracts for difference (CFDs), and commodities such as gold (XAUUSD) carries a high level of risk and may not be suitable for all investors. The high degree of leverage can work against you as well as for you. Before deciding to trade gold or utilize automated trading software, you should carefully consider your investment objectives, level of experience, and risk appetite. There is a possibility that you could sustain a loss of some or all of your initial investment; do not invest money that you cannot afford to lose.
           </p>
           <p className="text-zinc-400 text-[11px] leading-relaxed">
-            OPHIREUM Multimedia Production provides software, digital licensing, technical support, and related operational technology. OPHIREUM is not a broker and does not accept customer trading deposits or process withdrawals from brokerage accounts. Unless separately licensed and expressly disclosed for a particular jurisdiction, OPHIREUM does not provide personalized investment advice, discretionary portfolio management, brokerage, custody, or guaranteed investment returns. Leveraged trading involves substantial risk and may result in the loss of some or all trading capital. Past performance and hypothetical results do not guarantee future performance.
+            <strong className="text-zinc-300">Regulatory Demarcation:</strong> OPHIREUM Multimedia Production is exclusively a financial technology and software licensing firm. Ophireum is <strong className="text-zinc-200">NOT</strong> registered with, nor approved by, the U.S. Securities and Exchange Commission (SEC), the U.S. Commodity Futures Trading Commission (CFTC), the National Futures Association (NFA), the Financial Industry Regulatory Authority (FINRA), or any state or international financial regulatory authority as an investment adviser, broker-dealer, commodity trading advisor (CTA), commodity pool operator (CPO), or money transmitter. Ophireum does not manage investment portfolios, provide fiduciary financial advice, or custody customer trading deposits.
+          </p>
+          <p className="text-zinc-400 text-[11px] leading-relaxed">
+            <strong className="text-zinc-300">CFTC Rule 4.41 Statement:</strong> Hypothetical or simulated performance results have certain limitations. Unlike an actual performance record, simulated results do not represent actual trading. Also, since the trades have not been executed, the results may have under-or-over compensated for the impact, if any, of certain market factors, such as lack of liquidity. Simulated trading programs in general are also subject to the fact that they are designed with the benefit of hindsight. No representation is being made that any account will or is likely to achieve profits or losses similar to those shown.
           </p>
         </div>
 

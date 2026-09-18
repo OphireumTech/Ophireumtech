@@ -22,6 +22,10 @@ import { SupportDashboard } from './components/staff/SupportDashboard';
 import { FinanceDashboard } from './components/staff/FinanceDashboard';
 import { LicenseDashboard } from './components/staff/LicenseDashboard';
 import { EASimulator } from './components/ea/EASimulator';
+import { RegulatoryStatusPage } from './components/public/RegulatoryStatusPage';
+import { ComplaintHandlingPage } from './components/public/ComplaintHandlingPage';
+import { AccessibilityPage } from './components/public/AccessibilityPage';
+import { ComplianceReviewChecklist } from './components/compliance/ComplianceReviewChecklist';
 import { NotFoundPage } from './components/common/NotFoundPage';
 import { AccessDeniedPage } from './components/common/AccessDeniedPage';
 import { ContactAssistant } from './components/common/ContactAssistant';
@@ -316,6 +320,7 @@ const AppContent: React.FC = () => {
 
           {/* Company & Governance */}
           <Route path="/about" element={<CompanyPages section="about" />} />
+          <Route path="/regulatory-status" element={<RegulatoryStatusPage />} />
           <Route path="/vision-mission" element={<CompanyPages section="vision-mission" />} />
           <Route path="/core-values" element={<CompanyPages section="core-values" />} />
           <Route path="/responsible-tech" element={<CompanyPages section="responsible-tech" />} />
@@ -326,6 +331,9 @@ const AppContent: React.FC = () => {
           <Route path="/install-guide" element={<HelpCenter section="install-guide" />} />
           <Route path="/mt5-setup" element={<HelpCenter section="mt5-setup" />} />
           <Route path="/faq" element={<HelpCenter section="faq" />} />
+          <Route path="/complaints" element={<ComplaintHandlingPage />} />
+          <Route path="/disputes" element={<ComplaintHandlingPage />} />
+          <Route path="/accessibility" element={<AccessibilityPage />} />
 
           {/* Statutory Legal Center */}
           <Route path="/legal-terms" element={<LegalCenter document="legal-terms" />} />
@@ -485,6 +493,22 @@ const AppContent: React.FC = () => {
             element={
               <LicenseAdminRoute>
                 <LicenseDashboard />
+              </LicenseAdminRoute>
+            }
+          />
+          <Route
+            path="/admin/compliance"
+            element={
+              <LicenseAdminRoute>
+                <ComplianceReviewChecklist />
+              </LicenseAdminRoute>
+            }
+          />
+          <Route
+            path="/compliance-review"
+            element={
+              <LicenseAdminRoute>
+                <ComplianceReviewChecklist />
               </LicenseAdminRoute>
             }
           />

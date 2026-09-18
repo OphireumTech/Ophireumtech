@@ -102,41 +102,70 @@ export const LegalCenter: React.FC<LegalCenterProps> = ({ document }) => {
       {/* DOCUMENT CONTENT */}
       <div className="space-y-8 text-xs sm:text-sm text-zinc-300 leading-relaxed max-w-4xl">
         {/* TRADING RISK DISCLOSURE */}
-        {document === 'legal-risk' && (
+        {(document === 'legal-risk' || (document as string) === 'risk-disclosure') && (
           <>
-            <div className="p-6 rounded-xl bg-rose-950/20 border border-rose-800/40 space-y-3">
+            <div className="p-6 rounded-xl bg-rose-950/30 border border-rose-700/60 space-y-4">
               <h2 className="text-base font-bold text-rose-300 flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-rose-400" />
-                Persistent Risk Notice
+                <span>MANDATORY STATUTORY RISK DISCLOSURE & STATEMENT</span>
               </h2>
-              <p className="text-rose-200 text-xs sm:text-sm leading-relaxed font-medium">
-                No responsible trading system can guarantee profits. Automated tools execute programmed rules and may generate losses, including the loss of some or all trading capital. Market gaps, volatility, spread expansion, latency, slippage, broker execution, incorrect configuration, and connectivity failures can materially affect outcomes.
+              <div className="p-4 rounded-lg bg-black/60 border border-rose-900/60 font-mono text-xs text-rose-200 leading-relaxed font-bold">
+                CRITICAL NOTICE: AUTOMATION EXECUTES CONFIGURED RULES AUTOMATICALLY. AUTOMATION CANNOT ELIMINATE MARKET LOSS.
+                NO RESPONSIBLE TRADING SYSTEM CAN GUARANTEE PROFITS. YOU MAY LOSE SOME OR ALL OF YOUR INVESTED CAPITAL.
+              </div>
+              <p className="text-zinc-300 text-xs sm:text-sm leading-relaxed">
+                Trading spot commodities, currencies, derivatives, and contracts for difference (CFDs) on margin involves high risk and is not suitable for all investors. The high degree of leverage that is often obtainable in commodity trading can work against you as well as for you.
               </p>
             </div>
 
-            <div className="space-y-3">
-              <h3 className="text-base font-bold text-white">1. Scope of Operations & Non-Brokerage Status</h3>
-              <p className="text-zinc-400">
+            <div className="space-y-4">
+              <h3 className="text-base font-bold text-white border-b border-zinc-800 pb-2">
+                Comprehensive 24-Point Risk Factor Analysis
+              </h3>
+              <p className="text-zinc-400 text-xs leading-relaxed">
+                Before deploying the OPHIREUM Expert Assistant or executing any algorithmic strategy on MetaTrader 5, you must thoroughly read, comprehend, and accept the following twenty-four (24) operational and financial risk factors:
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                {[
+                  { title: '1. Market Risk', desc: 'Unpredictable market conditions, global macro events, central bank announcements, and sudden sentiment shifts can drive adverse price swings.' },
+                  { title: '2. Capital Loss Risk', desc: 'You may lose all of your deposited capital. Never allocate capital that you cannot afford to lose completely.' },
+                  { title: '3. Leverage Risk', desc: 'Margin trading amplifies both gains and losses. Modest market movements have a disproportionately large impact on your account balance.' },
+                  { title: '4. Volatility Risk', desc: 'Gold (XAUUSD) exhibits extreme intra-day volatility, particularly during geopolitical crises, inflation reports, and NFP releases.' },
+                  { title: '5. Liquidity Risk', desc: 'During off-hours, weekend openings, or illiquid market conditions, bids and asks may thin rapidly, preventing order execution.' },
+                  { title: '6. Slippage Risk', desc: 'Execution prices may differ materially from requested prices due to latency or order queue depth during high-volatility tick velocity.' },
+                  { title: '7. Spread Widening Risk', desc: 'Broker bid-ask spreads can expand unpredictably during roll-overs or economic news, triggering stop-loss orders prematurely.' },
+                  { title: '8. Execution & Broker Risk', desc: 'Order execution quality, rejection rates, re-quotes, and fill latency depend entirely on your chosen independent broker.' },
+                  { title: '9. Broker Counterparty Risk', desc: 'Your broker may experience insolvency, credit distress, regulatory suspension, or operational freezes beyond OPHIREUM control.' },
+                  { title: '10. Internet Outage Risk', desc: 'Local internet service interruptions between your computer and broker servers can prevent stop-loss or trade order dispatch.' },
+                  { title: '11. Power Failure Risk', desc: 'Local power cuts will terminate desktop MT5 execution unless a dedicated, uninterruptible cloud VPS is properly maintained.' },
+                  { title: '12. VPS Outage Risk', desc: 'Virtual private servers may undergo hypervisor reboots, cloud data-center network blips, or maintenance windows interrupting terminal uptime.' },
+                  { title: '13. API Interruption Risk', desc: 'Cloud Run WebRequest authorization APIs may experience transient network latency; the EA will hold or enter defensive mode.' },
+                  { title: '14. Software Defects Risk', desc: 'While rigorously tested, software code may contain unforeseen defects, compatibility bugs with MT5 updates, or OS edge cases.' },
+                  { title: '15. Configuration Errors Risk', desc: 'Incorrect terminal settings, unapproved WebRequest URLs, or disabling "Allow Algo Trading" will prevent proper automated execution.' },
+                  { title: '16. Parameter Mistakes Risk', desc: 'Manual modification of lot multipliers, risk percentages, or magic numbers may disrupt algorithmic confluence logic.' },
+                  { title: '17. Algorithmic Model Limitations', desc: 'Quantitative models are calibrated on historical price structures. Novel macroeconomic regimes may degrade strategy performance.' },
+                  { title: '18. Backtest Limitations Risk', desc: 'Backtests do not incorporate real-world broker spread widening, execution delay, slippage queues, or tick-feed latency.' },
+                  { title: '19. Past Performance Disclaimer', desc: 'Past performance, backtests, and demo results are not guarantees, warranties, or reliable indicators of future live results.' },
+                  { title: '20. Gap Risk', desc: 'Prices may gap over weekends or market sessions past your stop-loss level, executing at the next available tick price at a greater loss.' },
+                  { title: '21. News-Event Volatility Risk', desc: 'High-impact macroeconomic releases (FOMC, CPI, Non-Farm Payrolls) cause price spikes that can trigger rapid liquidations.' },
+                  { title: '22. Rollover & Swap Impact', desc: 'Holding leveraged positions overnight incurs broker financing swap fees or credits that can compound and erode account equity.' },
+                  { title: '23. Regulatory & Legal Risk', desc: 'Changes in national or local financial derivatives regulations may alter leverage limits, margin rules, or software legality.' },
+                  { title: '24. Cybersecurity Risk', desc: 'Compromise of your VPS password, broker master password, or operating system credentials can result in catastrophic unauthorized trading.' }
+                ].map((r, idx) => (
+                  <div key={idx} className="p-3.5 rounded-xl bg-[#0D1017] border border-zinc-800 space-y-1">
+                    <div className="font-semibold text-zinc-100">{r.title}</div>
+                    <p className="text-zinc-400 text-[11px] leading-relaxed">{r.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-3 pt-4 border-t border-zinc-800">
+              <h3 className="text-base font-bold text-white">Scope of Operations & Non-Brokerage Status</h3>
+              <p className="text-zinc-400 text-xs leading-relaxed">
                 OPHIREUM Multimedia Production provides software, digital licensing, technical support, and related operational technology. OPHIREUM is not a broker and does not accept customer trading deposits or process withdrawals from brokerage accounts. Unless separately licensed and expressly disclosed for a particular jurisdiction, OPHIREUM does not provide personalized investment advice, discretionary portfolio management, brokerage, custody, or guaranteed investment returns.
               </p>
-            </div>
-
-            <div className="space-y-3">
-              <h3 className="text-base font-bold text-white">2. Leveraged Derivatives Risk</h3>
-              <p className="text-zinc-400">
-                Trading spot gold (XAUUSD) on margin involves significant risk. The high degree of leverage that is often obtainable in commodity trading can work against you as well as for you. The use of leverage can lead to large losses as well as gains. Past performance or backtested metrics are not indicative of future performance.
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <h3 className="text-base font-bold text-white">3. Customer Responsibilities</h3>
-              <ul className="list-disc list-inside space-y-1.5 text-zinc-400">
-                <li>Determining the suitability of algorithmic software for their personal financial circumstances.</li>
-                <li>Selecting an independent, regulated MetaTrader 5 broker.</li>
-                <li>Safeguarding broker and VPS access credentials.</li>
-                <li>Maintaining adequate margin to prevent stop-out during spread spikes.</li>
-                <li>Seeking independent financial, legal, and tax advice.</li>
-              </ul>
             </div>
           </>
         )}
