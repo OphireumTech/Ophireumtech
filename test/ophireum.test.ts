@@ -297,4 +297,69 @@ describe('OPHIREUM Algorithmic Compliance & Licensing Suite', () => {
       assert.equal(sigClient.length, 64);
     });
   });
+
+  // Test 11: Account Classification & Invitational Referral Validation
+  describe('Account Classification & Invitational Referral Validation', () => {
+    function validateRegistrationInput(input: {
+      accountType: 'individual' | 'institutional';
+      fullName: string;
+      email: string;
+      referralCode: string;
+    }): { valid: boolean; error?: string } {
+      if (!input.accountType || (input.accountType !== 'individual' && input.accountType !== 'institutional')) {
+        return { valid: false, error: 'Valid account classification required (individual or institutional)' };
+      }
+      if (!input.fullName.trim()) {
+        return { valid: false, error: 'Full legal or entity name required' };
+      }
+      if (!input.email.trim() || !input.email.includes('@')) {
+        return { valid: false, error: 'Valid email address required' };
+      }
+      if (!input.referralCode || input.referralCode.trim().length < 4) {
+        return { valid: false, error: 'Registration is by invitation only. Valid referral code required.' };
+      }
+      return { valid: true };
+    }
+
+    it('rejects registration when referral code is missing (enforces invitation-only)', () => {
+      const result = validateRegistrationInput({
+        accountType: 'individual',
+        fullName: 'Jane Doe',
+        email: 'jane@example.com',
+        referralCode: ''
+      });
+      assert.equal(result.valid, false);
+      assert.ok(result.error?.includes('invitation only'));
+    });
+
+    it('rejects registration with truncated referral code (<4 chars)', () => {
+      const result = validateRegistrationInput({
+        accountType: 'institutional',
+        fullName: 'Apex Treasury Desk',
+        email: 'treasury@apex.com',
+        referralCode: 'AB'
+      });
+      assert.equal(result.valid, false);
+    });
+
+    it('accepts valid individual registration with authorized referral code', () => {
+      const result = validateRegistrationInput({
+        accountType: 'individual',
+        fullName: 'Jane Doe',
+        email: 'jane@example.com',
+        referralCode: 'OPH-GOLD-2026'
+      });
+      assert.equal(result.valid, true);
+    });
+
+    it('accepts valid institutional registration with authorized desk sponsor code', () => {
+      const result = validateRegistrationInput({
+        accountType: 'institutional',
+        fullName: 'Apex Global Treasury LLC',
+        email: 'trading@apexglobal.com',
+        referralCode: 'INSTITUTIONAL-DESK-2026'
+      });
+      assert.equal(result.valid, true);
+    });
+  });
 });

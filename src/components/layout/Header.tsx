@@ -278,40 +278,40 @@ export const Header: React.FC = () => {
       )}
 
       {/* Top Utility Bar with Environment Context & Role Switcher */}
-      <div className="bg-[#0B0D12] border-b border-[#1A1D26] px-4 py-1.5 text-xs text-[#9CA3AF]">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1.5 text-[#E4C765] font-medium">
+      <div className="bg-[#0B0D12] border-b border-[#1A1D26] px-4 sm:px-6 lg:px-8 py-1.5 text-xs text-[#9CA3AF]">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 sm:gap-4 truncate min-w-0">
+            <span className="flex items-center gap-1.5 text-[#E4C765] font-medium shrink-0">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               XAUUSD / Gold Engine v2.4.1
             </span>
-            <span className="hidden md:inline text-zinc-600">|</span>
-            <span className="hidden md:inline text-zinc-400">Strict MT5 Account-Bound Execution</span>
+            <span className="hidden md:inline text-zinc-600 shrink-0">|</span>
+            <span className="hidden md:inline text-zinc-400 truncate">Strict MT5 Account-Bound Execution</span>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3 shrink-0 ml-auto">
             {/* Quick Link to EA Simulation Test Bench */}
             <button
               id="header-btn-ea-simulator"
               type="button"
               onClick={() => handleNav('ea-simulator')}
-              className="px-2 py-0.5 rounded bg-[#101827] hover:bg-[#1A2234] border border-[#C9A227]/40 text-[#E4C765] flex items-center gap-1 transition-all cursor-pointer text-[11px]"
+              className="h-6 px-2.5 rounded bg-[#101827] hover:bg-[#1A2234] border border-[#C9A227]/40 text-[#E4C765] flex items-center gap-1.5 transition-all cursor-pointer text-[11px] font-medium shrink-0 whitespace-nowrap"
               title="Test EA Validation API, Signature, Nonce & Heartbeat in real time"
             >
-              <Terminal className="w-3 h-3 text-[#C9A227]" />
+              <Terminal className="w-3 h-3 text-[#C9A227] shrink-0" />
               <span>EA API Studio</span>
             </button>
 
             {/* Authenticated Status Badge */}
             {isDemo ? (
-              <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-[#C9A227]/20 border border-[#C9A227]/50 text-[#E4C765]">
+              <div className="h-6 flex items-center gap-1.5 px-2.5 rounded bg-[#C9A227]/20 border border-[#C9A227]/50 text-[#E4C765] shrink-0 whitespace-nowrap">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#E4C765] animate-pulse" />
                 <span className="text-[10px] uppercase font-mono font-bold tracking-wider">
                   DEMO ENVIRONMENT
                 </span>
               </div>
             ) : currentUser?.uid && currentRole !== 'visitor' ? (
-              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#161922] border border-[#2A3040] text-zinc-200">
+              <div className="h-6 flex items-center gap-1.5 px-2.5 rounded bg-[#161922] border border-[#2A3040] text-zinc-200 shrink-0 whitespace-nowrap">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                 <span className="text-[10px] text-zinc-400 uppercase tracking-wider">Role:</span>
                 <span className="font-semibold text-[#E4C765] capitalize text-[11px]">
@@ -319,7 +319,7 @@ export const Header: React.FC = () => {
                 </span>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#161922]/60 border border-[#2A3040]/50 text-zinc-400 text-[11px]">
+              <div className="h-6 flex items-center gap-1.5 px-2.5 rounded bg-[#161922]/70 border border-[#2A3040]/60 text-zinc-400 text-[11px] shrink-0 whitespace-nowrap">
                 <span>Public Access</span>
               </div>
             )}
@@ -328,9 +328,9 @@ export const Header: React.FC = () => {
       </div>
 
       {/* Main Navigation Bar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-[72px] h-[72px] flex items-center justify-between gap-2 xl:gap-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-6 xl:px-8 min-h-[72px] h-[72px] flex items-center justify-between">
         {/* Brand Logo with deliberate right spacing */}
-        <div id="header-brand-logo" className="flex-shrink-0 flex items-center mr-2 lg:mr-4 xl:mr-6">
+        <div id="header-brand-logo" className="shrink-0 flex items-center mr-2 lg:mr-3 xl:mr-5">
           <BrandLogo
             size="md"
             iconOnlyOnMobile={true}
@@ -339,20 +339,17 @@ export const Header: React.FC = () => {
           />
         </div>
 
-        {/* Subtle decorative divider for visual separation on wide screens */}
-        <div className="hidden 2xl:block h-6 w-px bg-[#232733]/90 mr-2 shrink-0" aria-hidden="true" />
-
         {/* Desktop Links with Single Authoritative Dropdown State */}
         <nav
           ref={navContainerRef}
           aria-label="Main Navigation"
-          className="hidden lg:flex items-center gap-1 xl:gap-2.5 2xl:gap-4 text-xs xl:text-sm font-medium text-[#F7F3E8] flex-1 justify-center max-w-4xl min-w-0"
+          className="hidden lg:flex items-center justify-center gap-1 lg:gap-1.5 xl:gap-2.5 2xl:gap-3.5 text-xs xl:text-[13px] 2xl:text-sm font-medium text-[#F7F3E8] flex-1 min-w-0 mx-2 xl:mx-4"
         >
           {/* Home Link - cleanly styled pill */}
           <button
             type="button"
             onClick={() => handleNav('home')}
-            className={`whitespace-nowrap shrink-0 px-2.5 py-1.5 rounded-lg transition-colors hover:text-[#E4C765] hover:bg-[#151923] cursor-pointer ${
+            className={`whitespace-nowrap shrink-0 px-2 lg:px-2.5 xl:px-3 py-1.5 rounded-lg transition-colors hover:text-[#E4C765] hover:bg-[#151923] cursor-pointer ${
               currentRoute === 'home' || location.pathname === '/' || location.pathname === '/home'
                 ? 'text-[#E4C765] font-semibold bg-[#151923] border border-[#C9A227]/30'
                 : 'text-zinc-300'
@@ -366,7 +363,7 @@ export const Header: React.FC = () => {
             id="nav-link-assistant"
             type="button"
             onClick={() => handleNav('assistant')}
-            className={`whitespace-nowrap shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-colors hover:text-[#E4C765] hover:bg-[#151923] cursor-pointer ${
+            className={`whitespace-nowrap shrink-0 flex items-center gap-1.5 px-2 lg:px-2.5 xl:px-3 py-1.5 rounded-lg transition-colors hover:text-[#E4C765] hover:bg-[#151923] cursor-pointer ${
               location.pathname === '/assistant'
                 ? 'text-[#E4C765] font-semibold bg-[#151923] border border-[#C9A227]/30'
                 : 'text-zinc-300'
@@ -393,7 +390,7 @@ export const Header: React.FC = () => {
               aria-controls="nav-dropdown-product"
               onClick={() => handleTriggerClick('product')}
               onKeyDown={(e) => handleTriggerKeyDown(e, 'product')}
-              className={`whitespace-nowrap flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:text-[#E4C765] hover:bg-[#151923] transition-colors cursor-pointer ${
+              className={`whitespace-nowrap flex items-center gap-1 px-2 lg:px-2.5 xl:px-3 py-1.5 rounded-lg hover:text-[#E4C765] hover:bg-[#151923] transition-colors cursor-pointer ${
                 activeMenu === 'product' ? 'text-[#E4C765] bg-[#151923]' : 'text-zinc-300'
               }`}
             >
@@ -542,7 +539,7 @@ export const Header: React.FC = () => {
           <button
             type="button"
             onClick={() => handleNav('how-it-works')}
-            className={`whitespace-nowrap shrink-0 px-2.5 py-1.5 rounded-lg transition-colors hover:text-[#E4C765] hover:bg-[#151923] cursor-pointer ${
+            className={`whitespace-nowrap shrink-0 px-2 lg:px-2.5 xl:px-3 py-1.5 rounded-lg transition-colors hover:text-[#E4C765] hover:bg-[#151923] cursor-pointer ${
               currentRoute === 'how-it-works' || location.pathname === '/how-it-works'
                 ? 'text-[#E4C765] font-semibold bg-[#151923] border border-[#C9A227]/30'
                 : 'text-zinc-300'
@@ -555,7 +552,7 @@ export const Header: React.FC = () => {
           <button
             type="button"
             onClick={() => handleNav('risk-disclosure')}
-            className={`whitespace-nowrap shrink-0 px-2.5 py-1.5 rounded-lg transition-colors hover:text-[#E4C765] hover:bg-[#151923] cursor-pointer ${
+            className={`whitespace-nowrap shrink-0 px-2 lg:px-2.5 xl:px-3 py-1.5 rounded-lg transition-colors hover:text-[#E4C765] hover:bg-[#151923] cursor-pointer ${
               currentRoute === 'risk-disclosure' || currentRoute === 'legal-risk' || location.pathname === '/risk-disclosure'
                 ? 'text-[#E4C765] font-semibold bg-[#151923] border border-[#C9A227]/30'
                 : 'text-zinc-300'
@@ -579,7 +576,7 @@ export const Header: React.FC = () => {
               aria-controls="nav-dropdown-company"
               onClick={() => handleTriggerClick('company')}
               onKeyDown={(e) => handleTriggerKeyDown(e, 'company')}
-              className={`whitespace-nowrap flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:text-[#E4C765] hover:bg-[#151923] transition-colors cursor-pointer ${
+              className={`whitespace-nowrap flex items-center gap-1 px-2 lg:px-2.5 xl:px-3 py-1.5 rounded-lg hover:text-[#E4C765] hover:bg-[#151923] transition-colors cursor-pointer ${
                 activeMenu === 'company' ? 'text-[#E4C765] bg-[#151923]' : 'text-zinc-300'
               }`}
             >
@@ -672,7 +669,7 @@ export const Header: React.FC = () => {
               aria-controls="nav-dropdown-help"
               onClick={() => handleTriggerClick('help')}
               onKeyDown={(e) => handleTriggerKeyDown(e, 'help')}
-              className={`whitespace-nowrap flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:text-[#E4C765] hover:bg-[#151923] transition-colors cursor-pointer ${
+              className={`whitespace-nowrap flex items-center gap-1 px-2 lg:px-2.5 xl:px-3 py-1.5 rounded-lg hover:text-[#E4C765] hover:bg-[#151923] transition-colors cursor-pointer ${
                 activeMenu === 'help' ? 'text-[#E4C765] bg-[#151923]' : 'text-zinc-300'
               }`}
             >
@@ -751,8 +748,11 @@ export const Header: React.FC = () => {
           </div>
         </nav>
 
+        {/* Subtle vertical divider separating navigation from action buttons */}
+        <div className="hidden lg:block h-6 w-px bg-[#232733]/90 shrink-0 ml-1 mr-1 lg:ml-2 lg:mr-1 xl:ml-3 xl:mr-2" aria-hidden="true" />
+
         {/* Right CTA / Notification Drawer / Portal Switcher */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0 ml-auto">
           {/* Notifications Button & Drawer */}
           <div ref={notifContainerRef} className="relative">
             <button
@@ -764,10 +764,10 @@ export const Header: React.FC = () => {
               }}
               aria-label="System Alerts & Notices"
               aria-expanded={notifDrawerOpen}
-              className="p-2 rounded-lg bg-[#111318] hover:bg-[#1A1D26] border border-[#232733] text-zinc-300 hover:text-[#E4C765] transition-colors relative cursor-pointer"
+              className="h-9 w-9 flex items-center justify-center rounded-lg bg-[#111318] hover:bg-[#181D2A] border border-[#232733] hover:border-[#C9A227]/40 text-zinc-300 hover:text-[#E4C765] transition-all relative cursor-pointer shrink-0"
               title="System Alerts & Notices"
             >
-              <Bell className="w-4 h-4" />
+              <Bell className="w-4 h-4 shrink-0" />
               {unreadCount > 0 && (
                 <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#C9A227] text-[#08090B] font-bold text-[10px] rounded-full flex items-center justify-center shadow-md">
                   {unreadCount}
@@ -816,12 +816,12 @@ export const Header: React.FC = () => {
 
           {/* Portals depending on role */}
           {currentRole === 'visitor' ? (
-            <div className="hidden sm:flex items-center gap-2 shrink-0">
+            <div className="hidden sm:flex items-center gap-2.5 sm:gap-3 shrink-0">
               <button
                 id="header-btn-login"
                 type="button"
                 onClick={() => handleNav('login')}
-                className="whitespace-nowrap px-3.5 py-2 text-xs font-semibold text-zinc-200 hover:text-white transition-colors cursor-pointer"
+                className="h-9 px-3.5 sm:px-4 flex items-center justify-center rounded-lg bg-[#111318] hover:bg-[#181D2A] border border-[#232733] hover:border-[#C9A227]/40 text-xs font-semibold text-zinc-200 hover:text-[#E4C765] transition-all cursor-pointer whitespace-nowrap shrink-0"
               >
                 Log In
               </button>
@@ -829,18 +829,18 @@ export const Header: React.FC = () => {
                 id="header-btn-register"
                 type="button"
                 onClick={() => handleNav('register')}
-                className="whitespace-nowrap px-4 py-2 rounded-lg bg-gradient-to-r from-[#C9A227] to-[#E4C765] text-[#08090B] font-bold text-xs shadow-md shadow-[#C9A227]/20 hover:brightness-110 transition-all cursor-pointer"
+                className="h-9 px-3.5 sm:px-4.5 flex items-center justify-center rounded-lg bg-gradient-to-r from-[#C9A227] to-[#E4C765] text-[#08090B] font-bold text-xs shadow-sm hover:brightness-110 transition-all cursor-pointer whitespace-nowrap shrink-0"
               >
                 Get Started
               </button>
             </div>
           ) : currentRole === 'customer' ? (
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
               <button
                 id="header-btn-dashboard"
                 type="button"
                 onClick={() => handleNav('dashboard')}
-                className="whitespace-nowrap px-4 py-2 rounded-lg bg-gradient-to-r from-[#C9A227] to-[#E4C765] text-[#08090B] font-bold text-xs shadow-md shadow-[#C9A227]/20 hover:brightness-110 transition-all cursor-pointer flex items-center gap-1.5"
+                className="h-9 px-3.5 sm:px-4 flex items-center justify-center rounded-lg bg-gradient-to-r from-[#C9A227] to-[#E4C765] text-[#08090B] font-bold text-xs shadow-sm hover:brightness-110 transition-all cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap"
               >
                 <Layers className="w-3.5 h-3.5 shrink-0" />
                 <span>Customer Portal</span>
@@ -848,14 +848,14 @@ export const Header: React.FC = () => {
               <button
                 type="button"
                 onClick={logout}
-                className="p-2 rounded-lg bg-[#111318] hover:bg-rose-950/40 border border-[#232733] hover:border-rose-800 text-zinc-400 hover:text-rose-300 transition-colors cursor-pointer shrink-0"
+                className="h-9 w-9 flex items-center justify-center rounded-lg bg-[#111318] hover:bg-rose-950/40 border border-[#232733] hover:border-rose-800 text-zinc-400 hover:text-rose-300 transition-colors cursor-pointer shrink-0"
                 title="Log Out"
               >
                 <LogOut className="w-4 h-4 shrink-0" />
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
               <button
                 id="header-btn-staff-portal"
                 type="button"
@@ -865,7 +865,7 @@ export const Header: React.FC = () => {
                   else if (currentRole === 'finance_reviewer') handleNav('finance-dashboard');
                   else if (currentRole === 'support_agent') handleNav('support-dashboard');
                 }}
-                className="whitespace-nowrap px-4 py-2 rounded-lg bg-[#141824] border border-[#2B354C] text-[#E4C765] font-bold text-xs hover:bg-[#1A2234] transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
+                className="h-9 px-3.5 sm:px-4 flex items-center justify-center rounded-lg bg-[#141824] border border-[#2B354C] text-[#E4C765] font-bold text-xs hover:bg-[#1A2234] transition-all cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap"
               >
                 <Shield className="w-3.5 h-3.5 text-[#C9A227] shrink-0" />
                 <span>
@@ -881,7 +881,7 @@ export const Header: React.FC = () => {
               <button
                 type="button"
                 onClick={logout}
-                className="p-2 rounded-lg bg-[#111318] hover:bg-rose-950/40 border border-[#232733] hover:border-rose-800 text-zinc-400 hover:text-rose-300 transition-colors cursor-pointer shrink-0"
+                className="h-9 w-9 flex items-center justify-center rounded-lg bg-[#111318] hover:bg-rose-950/40 border border-[#232733] hover:border-rose-800 text-zinc-400 hover:text-rose-300 transition-colors cursor-pointer shrink-0"
                 title="Log Out"
               >
                 <LogOut className="w-4 h-4 shrink-0" />
@@ -897,7 +897,7 @@ export const Header: React.FC = () => {
               setNotifDrawerOpen(false);
               setMobileMenuOpen(prev => !prev);
             }}
-            className="lg:hidden p-2 rounded-lg bg-[#111318] text-zinc-300 border border-[#232733] hover:text-[#E4C765] cursor-pointer transition-colors"
+            className="lg:hidden h-9 w-9 flex items-center justify-center rounded-lg bg-[#111318] text-zinc-300 border border-[#232733] hover:text-[#E4C765] hover:border-[#C9A227]/40 cursor-pointer transition-colors shrink-0"
             aria-label={mobileMenuOpen ? 'Close Navigation Menu' : 'Open Navigation Menu'}
             aria-expanded={mobileMenuOpen}
           >

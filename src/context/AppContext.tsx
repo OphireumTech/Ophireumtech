@@ -101,7 +101,7 @@ export interface AppContextType {
   switchRole: (role: UserRole) => void;
   login: (email: string, password?: string) => Promise<boolean> | boolean;
   logout: () => void;
-  registerUser: (fullName: string, email: string, password: string) => Promise<boolean>;
+  registerUser: (fullName: string, email: string, password: string, accountType?: 'individual' | 'institutional', referralCode?: string) => Promise<boolean>;
   acceptAgreements: () => void;
   sendPasswordReset: (email: string) => Promise<boolean>;
   sendVerificationEmail: () => Promise<boolean>;
@@ -624,9 +624,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const registerUser = async (fullName: string, email: string, password: string): Promise<boolean> => {
+  const registerUser = async (
+    fullName: string,
+    email: string,
+    password: string,
+    accountType: 'individual' | 'institutional' = 'individual',
+    referralCode: string = ''
+  ): Promise<boolean> => {
     const cleanEmail = email.trim().toLowerCase();
     const cleanName = fullName.trim();
+    const cleanReferral = referralCode.trim().toUpperCase();
 
     if (!cleanName) {
       addToast('Full Name Required', 'Please enter your full legal name.', 'warning');
@@ -638,6 +645,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     if (!password || password.length < 6) {
       addToast('Weak Password', 'Please use a stronger password.', 'warning');
+      return false;
+    }
+    if (!cleanReferral) {
+      addToast('Invitation Code Required', 'Registration is by invitation only. A valid referral code is required.', 'warning');
       return false;
     }
 
@@ -662,6 +673,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         uid,
         email: cleanEmail,
         fullName: cleanName,
+        accountType,
+        referralCode: cleanReferral,
         isEmailVerified: userCred.user.emailVerified,
         mfaEnabled: false,
         role: 'customer' as const, // Always enforce customer role, never admin
@@ -681,6 +694,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         uid,
         fullName: cleanName,
         email: cleanEmail,
+        accountType,
+        referralCode: cleanReferral,
         country: 'Unspecified',
         phone: '',
         timezone: 'UTC',

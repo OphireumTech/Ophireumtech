@@ -9,6 +9,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Sparkles, X, Send, Bot, User, ArrowRight, CornerDownLeft, Shield, Info } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { cleanPlainText } from '../assistant/CleanMessageRenderer';
 
 interface GlobalAskOphireumProps {
   currentTab: string;
@@ -202,7 +203,7 @@ export const GlobalAskOphireum: React.FC<GlobalAskOphireumProps> = ({
                   : 'bg-[#121622] border border-[#1E2538] text-zinc-200'
               }`}
             >
-              {msg.text}
+              {cleanPlainText(msg.text)}
             </div>
             <span className="text-[9px] text-zinc-500 mt-1 px-1">{msg.time}</span>
           </div>

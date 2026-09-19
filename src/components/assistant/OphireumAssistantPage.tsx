@@ -78,6 +78,7 @@ import {
   Coins,
   FileSpreadsheet
 } from 'lucide-react';
+import { CleanMessageRenderer, cleanPlainText } from './CleanMessageRenderer';
 
 const SUGGESTED_PROMPTS = [
   { text: 'Analyze today’s principal XAUUSD drivers', category: 'Gold & Macro' },
@@ -425,7 +426,7 @@ export const OphireumAssistantPage: React.FC = () => {
       txt += `====================================================\n\n`;
       msgs.forEach(m => {
         txt += `[${m.role.toUpperCase()}] (${m.timestamp})\n`;
-        txt += `${m.content}\n\n`;
+        txt += `${cleanPlainText(m.content)}\n\n`;
       });
       txt += `\n\nDISCLAIMER:\nOphireum Assistant provides market information, research tools, and general trading education. Not personalized financial advice.`;
       blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
@@ -611,10 +612,10 @@ export const OphireumAssistantPage: React.FC = () => {
 
   // Message Copy
   const handleCopyMessage = (msgId: string, content: string) => {
-    navigator.clipboard.writeText(content);
+    navigator.clipboard.writeText(cleanPlainText(content));
     setCopiedMessageId(msgId);
     setTimeout(() => setCopiedMessageId(null), 2000);
-    addToast('Copied', 'Analysis copied to clipboard.', 'success');
+    addToast('Copied', 'Clean formatted text copied to clipboard.', 'success');
   };
 
   // Feedback Submission
@@ -779,8 +780,8 @@ export const OphireumAssistantPage: React.FC = () => {
               ...c,
               updatedAt: new Date().toISOString(),
               messageCount: (c.messageCount || 0) + 2,
-              title: c.title === 'New Market Inquiry' ? textToSend.slice(0, 32) : c.title,
-              previewSnippet: textToSend.slice(0, 60)
+              title: c.title === 'New Market Inquiry' ? cleanPlainText(textToSend).slice(0, 32) : c.title,
+              previewSnippet: cleanPlainText(textToSend).slice(0, 60)
             }
           : c
       )
@@ -845,6 +846,18 @@ export const OphireumAssistantPage: React.FC = () => {
           };
         });
 
+        // Update conversation preview snippet cleanly
+        setConversations(prev =>
+          prev.map(c =>
+            c.id === currentConvoId
+              ? {
+                  ...c,
+                  previewSnippet: cleanPlainText(result.fullText).slice(0, 75) || c.previewSnippet
+                }
+              : c
+          )
+        );
+
         // Sync authoritative server balance
         if (currentUser?.uid) {
           fetchServerWallet();
@@ -904,7 +917,9 @@ export const OphireumAssistantPage: React.FC = () => {
     if (!searchFilter.trim()) return conversations;
     const q = searchFilter.toLowerCase();
     return conversations.filter(
-      c => c.title.toLowerCase().includes(q) || c.previewSnippet?.toLowerCase().includes(q)
+      c =>
+        cleanPlainText(c.title).toLowerCase().includes(q) ||
+        cleanPlainText(c.previewSnippet || '').toLowerCase().includes(q)
     );
   }, [conversations, searchFilter]);
 
@@ -1102,8 +1117,8 @@ export const OphireumAssistantPage: React.FC = () => {
                         }`}
                       >
                         <div className="flex-1 truncate pr-2">
-                          <div className="font-medium truncate">{convo.title}</div>
-                          <div className="text-[10px] text-zinc-500 truncate">{convo.previewSnippet || 'No messages'}</div>
+                          <div className="font-medium truncate">{cleanPlainText(convo.title)}</div>
+                          <div className="text-[10px] text-zinc-500 truncate">{cleanPlainText(convo.previewSnippet || 'No messages')}</div>
                         </div>
                         <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 shrink-0">
                           <button
@@ -1168,8 +1183,8 @@ export const OphireumAssistantPage: React.FC = () => {
                           </div>
                         ) : (
                           <>
-                            <div className="truncate font-medium">{convo.title}</div>
-                            <div className="text-[10px] text-zinc-500 truncate">{convo.previewSnippet || 'New session'}</div>
+                            <div className="truncate font-medium">{cleanPlainText(convo.title)}</div>
+                            <div className="text-[10px] text-zinc-500 truncate">{cleanPlainText(convo.previewSnippet || 'New session')}</div>
                           </>
                         )}
                       </div>
@@ -1380,7 +1395,7 @@ export const OphireumAssistantPage: React.FC = () => {
                             : 'bg-amber-50 border-amber-200 text-zinc-900'
                         }`}
                       >
-                        <div className="whitespace-pre-wrap">{msg.content}</div>
+                        <div className="whitespace-pre-wrap">{cleanPlainText(msg.content)}</div>
 
                         {/* Display Attached Files if any */}
                         {msg.attachedFiles && msg.attachedFiles.length > 0 && (
@@ -1428,13 +1443,12 @@ export const OphireumAssistantPage: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Render Content */}
-                        <div className="prose prose-invert max-w-none text-xs sm:text-sm leading-relaxed space-y-3 whitespace-pre-wrap">
-                          {msg.content}
-                          {msg.isStreaming && (
-                            <span className="inline-block w-2 h-4 bg-[#E4C765] ml-1 animate-pulse" />
-                          )}
-                        </div>
+                        {/* Clean Minimalist Institutional Market Intelligence Output */}
+                        <CleanMessageRenderer
+                          content={msg.content}
+                          isStreaming={msg.isStreaming}
+                          theme={theme}
+                        />
 
                         {/* Citations Panel if present */}
                         {msg.citations && msg.citations.length > 0 && (

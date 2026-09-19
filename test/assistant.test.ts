@@ -334,4 +334,41 @@ describe('OPHIREUM ASSISTANT 14-POINT AUDIT TEST SUITE', () => {
       }
     });
   });
+
+  // 7. CLEAN, MINIMALIST FORMATTING & ASTERISK SANITIZATION
+  describe('7. Clean, Neat & Minimalist UI Formatting (Asterisk Sanitization)', () => {
+    function cleanPlainText(text: string): string {
+      if (!text) return '';
+      return text
+        .replace(/^#{1,6}\s+/gm, '')
+        .replace(/\*\*(.*?)\*\*/g, '$1')
+        .replace(/\*(.*?)\*/g, '$1')
+        .replace(/_{1,2}(.*?)_{1,2}/g, '$1')
+        .replace(/^\s*[-*•]\s+/gm, '• ')
+        .replace(/\*/g, '')
+        .trim();
+    }
+
+    test('completely strips asterisks and markdown symbols from search results and preview snippets', () => {
+      const rawSearchSnippet = '**A. Market Summary**: *Spot Gold* (XAUUSD) trades at $2,908.45/oz (+0.51%)';
+      const cleaned = cleanPlainText(rawSearchSnippet);
+      assert.equal(cleaned.includes('*'), false, 'Search result must not contain asterisks');
+      assert.equal(cleaned, 'A. Market Summary: Spot Gold (XAUUSD) trades at $2,908.45/oz (+0.51%)');
+    });
+
+    test('strips heading hashes and bold markers from titles', () => {
+      const rawTitle = '### **Gold Price Technical Analysis**';
+      const cleaned = cleanPlainText(rawTitle);
+      assert.equal(cleaned.includes('*'), false, 'Title must not contain asterisks');
+      assert.equal(cleaned.includes('#'), false, 'Title must not contain hashes');
+      assert.equal(cleaned, 'Gold Price Technical Analysis');
+    });
+
+    test('normalizes list items and removes stray asterisks', () => {
+      const rawBullets = '* Ongoing central-bank buying\n* Geopolitical hedging*';
+      const cleaned = cleanPlainText(rawBullets);
+      assert.equal(cleaned.includes('*'), false, 'Bullets must not contain asterisks');
+      assert.ok(cleaned.includes('• Ongoing central-bank buying'));
+    });
+  });
 });

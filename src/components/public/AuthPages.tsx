@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Shield, Lock, Mail, User, ArrowRight, CheckCircle2, AlertCircle, RefreshCw, Clock } from 'lucide-react';
+import { Shield, Lock, Mail, User, ArrowRight, CheckCircle2, AlertCircle, RefreshCw, Clock, Building2, Key } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { auth } from '../../lib/firebase';
 import { BrandLogo } from '../common/BrandLogo';
@@ -33,6 +33,8 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ view }) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [accountType, setAccountType] = useState<'individual' | 'institutional'>('individual');
+  const [referralCode, setReferralCode] = useState('');
   const [termsAgreed, setTermsAgreed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [resetSent, setResetSent] = useState(false);
@@ -101,10 +103,18 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ view }) => {
       addToast('Agreements Required', 'You must agree to the Terms of Use and Risk Disclosure.', 'warning');
       return;
     }
+    if (!referralCode.trim()) {
+      addToast('Invitation Code Required', 'Registration is strictly by invitation only. Please provide your referral or invitation code.', 'warning');
+      return;
+    }
+    if (referralCode.trim().length < 4) {
+      addToast('Invalid Invitation Code', 'Referral or invitation codes must be at least 4 alphanumeric characters.', 'warning');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
-      await registerUser(cleanName, cleanEmail, password);
+      await registerUser(cleanName, cleanEmail, password, accountType, referralCode.trim());
       // registerUser handles verification email dispatch and routes to verify-email
     } finally {
       setIsSubmitting(false);
@@ -202,10 +212,11 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ view }) => {
                   id="auth-input-email"
                   type="text"
                   required
+                  autoComplete="off"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-[#111420] border border-[#232838] rounded-lg pl-9 pr-3 py-2.5 text-zinc-100 placeholder-zinc-600 focus:border-[#C9A227] outline-none transition-colors font-mono"
-                  placeholder="Demo account or name@example.com"
+                  placeholder="name@example.com or Client ID"
                 />
               </div>
             </div>
@@ -227,10 +238,11 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ view }) => {
                   id="auth-input-password"
                   type="password"
                   required
+                  autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full bg-[#111420] border border-[#232838] rounded-lg pl-9 pr-3 py-2.5 text-zinc-100 placeholder-zinc-600 focus:border-[#C9A227] outline-none transition-colors"
-                  placeholder="••••••••"
+                  placeholder="Key in your password"
                 />
               </div>
             </div>
@@ -253,42 +265,120 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ view }) => {
                 </>
               )}
             </button>
-
-            {/* Section 102: Temporary Protected Demonstration Credentials Helper */}
-            {import.meta.env.VITE_APP_ENV !== 'production' && (
-              <div className="mt-4 p-3.5 rounded-xl bg-[#141824] border border-[#2B354C] text-left space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 font-bold text-[#E4C765] text-xs">
-                    <span className="w-2 h-2 rounded-full bg-[#E4C765] animate-pulse" />
-                    <span>DEMO ACCESS (SIMULATION)</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEmail('test2026');
-                      setPassword('test2026');
-                    }}
-                    className="px-2.5 py-1 rounded bg-[#C9A227]/20 border border-[#C9A227]/40 text-[#E4C765] hover:bg-[#C9A227]/30 text-[11px] font-mono font-bold transition-colors cursor-pointer shrink-0"
-                  >
-                    Auto-Fill
-                  </button>
-                </div>
-                <div className="text-[11px] text-zinc-300">
-                  Pre-configured testing credentials will be loaded securely into the form fields.
-                </div>
-                <div className="text-[10px] text-zinc-400 leading-tight">
-                  Protected simulation account for QA & client demonstration. Zero real fund connectivity.
-                </div>
-              </div>
-            )}
           </form>
         )}
 
         {/* REGISTER FORM */}
         {view === 'register' && (
           <form onSubmit={handleRegister} className="space-y-4 text-xs">
+            {/* Invitation-Only Notice Banner */}
+            <div className="p-3.5 rounded-xl bg-[#121622] border border-[#C9A227]/40 text-left space-y-1.5 shadow-sm">
+              <div className="flex items-center gap-2 font-bold text-[#E4C765] text-xs uppercase tracking-wider">
+                <Shield className="w-4 h-4 text-[#E4C765] shrink-0" />
+                <span>Registration is by Invitation Only</span>
+              </div>
+              <p className="text-[11px] text-zinc-300 leading-relaxed">
+                Access to OPHIREUM algorithmic execution infrastructure is restricted. An authorized referral or institutional desk invitation code is required to register.
+              </p>
+            </div>
+
+            {/* Account Classification Radio Buttons */}
             <div>
-              <label className="block text-zinc-400 mb-1 font-medium">Full Legal Name</label>
+              <label className="block text-zinc-300 mb-2 font-medium">
+                Account Classification <span className="text-[#E4C765]">*</span>
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {/* Individual Account Option */}
+                <label
+                  htmlFor="account-type-individual"
+                  className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                    accountType === 'individual'
+                      ? 'bg-[#181D2A] border-[#C9A227] text-white shadow-sm ring-1 ring-[#C9A227]/40'
+                      : 'bg-[#111420] border-[#232838] text-zinc-400 hover:border-zinc-700 hover:text-zinc-200'
+                  }`}
+                >
+                  <input
+                    id="account-type-individual"
+                    type="radio"
+                    name="accountType"
+                    value="individual"
+                    checked={accountType === 'individual'}
+                    onChange={() => setAccountType('individual')}
+                    className="mt-1 text-[#C9A227] focus:ring-0 cursor-pointer accent-[#C9A227]"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 font-semibold text-xs text-zinc-100">
+                      <User className="w-3.5 h-3.5 text-[#E4C765]" />
+                      <span>Individual Account</span>
+                    </div>
+                    <div className="text-[10px] text-zinc-400 mt-0.5 leading-tight">
+                      Personal MT5 algorithmic trading & private strategy deployment
+                    </div>
+                  </div>
+                </label>
+
+                {/* Institutional Account Option */}
+                <label
+                  htmlFor="account-type-institutional"
+                  className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                    accountType === 'institutional'
+                      ? 'bg-[#181D2A] border-[#C9A227] text-white shadow-sm ring-1 ring-[#C9A227]/40'
+                      : 'bg-[#111420] border-[#232838] text-zinc-400 hover:border-zinc-700 hover:text-zinc-200'
+                  }`}
+                >
+                  <input
+                    id="account-type-institutional"
+                    type="radio"
+                    name="accountType"
+                    value="institutional"
+                    checked={accountType === 'institutional'}
+                    onChange={() => setAccountType('institutional')}
+                    className="mt-1 text-[#C9A227] focus:ring-0 cursor-pointer accent-[#C9A227]"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 font-semibold text-xs text-zinc-100">
+                      <Building2 className="w-3.5 h-3.5 text-[#E4C765]" />
+                      <span>Institutional Account</span>
+                    </div>
+                    <div className="text-[10px] text-zinc-400 mt-0.5 leading-tight">
+                      Prop desks, corporate treasury, family offices & hedge funds
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* Referral / Invitation Code Field */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-zinc-400 font-medium">
+                  Referral / Invitation Code <span className="text-[#E4C765]">*</span>
+                </label>
+                <span className="text-[10px] text-[#E4C765] font-mono uppercase tracking-wider font-semibold">
+                  Required
+                </span>
+              </div>
+              <div className="relative">
+                <Key className="w-4 h-4 text-[#E4C765] absolute left-3 top-3" />
+                <input
+                  id="auth-input-reg-referral"
+                  type="text"
+                  required
+                  value={referralCode}
+                  onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                  className="w-full bg-[#111420] border border-[#232838] rounded-lg pl-9 pr-3 py-2.5 text-zinc-100 placeholder-zinc-600 focus:border-[#C9A227] outline-none transition-colors uppercase font-mono tracking-wider"
+                  placeholder="e.g., OPH-GOLD-2026 or Sponsor Code"
+                />
+              </div>
+              <p className="text-[10px] text-zinc-500 mt-1">
+                Enter the referral or sponsor code from your invitation letter or desk manager.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-zinc-400 mb-1 font-medium">
+                {accountType === 'institutional' ? 'Authorized Signatory & Entity Name' : 'Full Legal Name'} <span className="text-[#E4C765]">*</span>
+              </label>
               <div className="relative">
                 <User className="w-4 h-4 text-zinc-500 absolute left-3 top-3" />
                 <input
@@ -298,7 +388,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ view }) => {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   className="w-full bg-[#111420] border border-[#232838] rounded-lg pl-9 pr-3 py-2.5 text-zinc-100 placeholder-zinc-600 focus:border-[#C9A227] outline-none transition-colors"
-                  placeholder="Institutional or Personal Name"
+                  placeholder={accountType === 'institutional' ? 'e.g., Alexander Vance (Apex Treasury LLC)' : 'Personal Legal Name'}
                 />
               </div>
             </div>
@@ -375,11 +465,11 @@ export const AuthPages: React.FC<AuthPagesProps> = ({ view }) => {
               {isSubmitting ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Creating Account...</span>
+                  <span>Validating Invitation & Creating Account...</span>
                 </>
               ) : (
                 <>
-                  <span>Register Account</span>
+                  <span>Register {accountType === 'institutional' ? 'Institutional' : 'Individual'} Account</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}

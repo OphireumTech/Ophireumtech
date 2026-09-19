@@ -21,6 +21,8 @@ export interface UserProfile {
   isEmailVerified: boolean;
   mfaEnabled: boolean;
   role: UserRole;
+  accountType?: 'individual' | 'institutional';
+  referralCode?: string;
   createdAt: string;
   updatedAt: string;
   starterPurchased?: boolean;
