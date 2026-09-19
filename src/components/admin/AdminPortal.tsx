@@ -31,6 +31,7 @@ import { UserProfile, UserRole } from '../../types';
 import { auth, db } from '../../lib/firebase';
 import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
 import { BrandLogo } from '../common/BrandLogo';
+import { ComplianceReviewConsole } from '../compliance/ComplianceReviewChecklist';
 
 export const AdminPortal: React.FC = () => {
   const {
@@ -44,7 +45,7 @@ export const AdminPortal: React.FC = () => {
     setCurrentRoute
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'users' | 'emergency' | 'audit' | 'settings' | 'plans' | 'infra'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'emergency' | 'audit' | 'settings' | 'plans' | 'infra' | 'compliance'>('users');
   const [usersList, setUsersList] = useState<UserProfile[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [searchUser, setSearchUser] = useState('');
@@ -251,6 +252,14 @@ export const AdminPortal: React.FC = () => {
           }`}
         >
           Infrastructure Status
+        </button>
+        <button
+          onClick={() => setActiveTab('compliance')}
+          className={`pb-3 border-b-2 font-bold cursor-pointer transition-colors ${
+            activeTab === 'compliance' ? 'border-[#C9A227] text-[#E4C765]' : 'border-transparent text-zinc-400 hover:text-white'
+          }`}
+        >
+          Regulatory & Compliance Assessment
         </button>
       </div>
 
@@ -646,6 +655,11 @@ export const AdminPortal: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* TAB 7: REGULATORY & COMPLIANCE ASSESSMENT */}
+      {activeTab === 'compliance' && (
+        <ComplianceReviewConsole />
       )}
     </div>
   );

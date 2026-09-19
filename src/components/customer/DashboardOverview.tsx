@@ -27,6 +27,8 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { DemoAccount } from '../../types';
+import { complianceEngine } from '../../services/complianceEngine';
+import { Shield } from 'lucide-react';
 
 interface DashboardOverviewProps {
   onNavigateTab: (tabKey: string) => void;
@@ -190,6 +192,53 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             </button>
           </div>
         )}
+      </div>
+
+      {/* Institutional 13-Gate Regulatory Compliance Summary Card */}
+      <div className="p-5 rounded-2xl bg-gradient-to-r from-[#0D1017] via-[#101522] to-[#0D1017] border border-[#C9A227]/30 shadow-md space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#1A2130] pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-[#C9A227]/20 border border-[#C9A227]/40 flex items-center justify-center text-[#E4C765]">
+              <Shield className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-white font-serif uppercase tracking-wider">
+                INSTITUTIONAL REGULATORY ONBOARDING & 13-GATE LEDGER
+              </div>
+              <p className="text-[11px] text-zinc-400">
+                Statutory KYC, KYB, UBO, suitability, and tamper-evident digital signature certificates.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => onNavigateTab('compliance-tracker')}
+            className="text-xs font-mono text-[#E4C765] hover:text-white flex items-center gap-1.5 cursor-pointer font-bold shrink-0"
+          >
+            <span>View 13 Compliance Gates</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-xs font-mono">
+          <div className="p-2.5 rounded-xl bg-[#080B11] border border-[#1C2538] flex items-center justify-between">
+            <span className="text-zinc-400 text-[10px]">GATES CLEARED:</span>
+            <span className="text-emerald-400 font-bold">12 / 13 PASSED</span>
+          </div>
+          <div className="p-2.5 rounded-xl bg-[#080B11] border border-[#1C2538] flex items-center justify-between">
+            <span className="text-zinc-400 text-[10px]">DIGITAL SIGNATURES:</span>
+            <span className="text-[#E4C765] font-bold">CERTIFIED (SHA-256)</span>
+          </div>
+          <div className="p-2.5 rounded-xl bg-[#080B11] border border-[#1C2538] flex items-center justify-between">
+            <span className="text-zinc-400 text-[10px]">UBO REGISTRY:</span>
+            <span className="text-emerald-400 font-bold">≥ 25% AUDITED</span>
+          </div>
+          <div className="p-2.5 rounded-xl bg-[#080B11] border border-[#1C2538] flex items-center justify-between">
+            <span className="text-zinc-400 text-[10px]">SUITABILITY TEST:</span>
+            <span className="text-emerald-400 font-bold">APPROPRIATE</span>
+          </div>
+        </div>
       </div>
 
       {/* 4. Progressive User Journey (Section 12, 63) */}

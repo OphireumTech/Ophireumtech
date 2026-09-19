@@ -25,7 +25,15 @@ import {
   FileCheck,
   ChevronDown,
   ChevronRight,
-  X
+  X,
+  Building2,
+  Users,
+  BrainCircuit,
+  Landmark,
+  Server,
+  FolderLock,
+  FileCode,
+  Scale
 } from 'lucide-react';
 
 export interface NavItem {
@@ -57,47 +65,58 @@ export const PORTAL_NAV_GROUPS: NavGroup[] = [
     ]
   },
   {
-    id: 'get-started-group',
-    title: 'GET STARTED',
+    id: 'compliance-group',
+    title: 'COMPLIANCE & GOVERNANCE',
     items: [
-      { key: 'verification', label: 'Identity Verification', icon: Shield },
+      { key: 'compliance-tracker', label: '13-Gate Progression', icon: Shield, badge: '13 GATES' },
+      { key: 'verification', label: 'Individual KYC Verification', icon: User },
+      { key: 'corporate-kyb', label: 'Corporate Entity KYB', icon: Building2 },
+      { key: 'ubo-registry', label: 'Beneficial Owners (UBO)', icon: Users },
+      { key: 'suitability-test', label: 'Trading Knowledge & Suitability', icon: BrainCircuit },
+      { key: 'source-of-funds', label: 'Source of Funds & Wealth', icon: Landmark },
+      { key: 'digital-signatures', label: 'Digital Signature Center', icon: FileCheck, badge: 'LEGAL' },
+      { key: 'document-vault', label: 'Secure Document Vault', icon: FolderLock },
+      { key: 'privacy-center', label: 'Privacy & Data Rights', icon: Lock },
+      { key: 'audit-trail', label: 'Regulatory Audit Trail', icon: FileCode }
+    ]
+  },
+  {
+    id: 'get-started-group',
+    title: 'GET STARTED & BILLING',
+    items: [
       { key: 'subscription', label: 'Subscription & Payment', icon: CreditCard },
-      { key: 'connect-account', label: 'Connect Trading Account', icon: Terminal }
+      { key: 'connect-account', label: 'Connect Trading Account', icon: Terminal },
+      { key: 'ea-authorization', label: 'EA Terminal Authorization', icon: Cpu, badge: 'ACTIVE' }
     ]
   },
   {
     id: 'trading-group',
-    title: 'TRADING',
+    title: 'TRADING & EXECUTION',
     items: [
       { key: 'trading-monitor', label: 'Trading Monitor', icon: Activity },
       { key: 'charts', label: 'Charts', icon: BarChart2 },
-      { key: 'performance', label: 'Performance', icon: TrendingUp }
+      { key: 'performance', label: 'Performance', icon: TrendingUp },
+      { key: 'bot-control', label: 'Bot Control Center', icon: Cpu }
     ]
   },
   {
     id: 'ophireum-group',
-    title: 'OPHIREUM',
+    title: 'INTELLIGENCE & AI',
     items: [
       { key: 'assistant', label: 'Expert Assistant', icon: Sparkles, badge: 'AI' },
-      { key: 'bot-control', label: 'Bot Control', icon: Cpu },
       { key: 'market-intel', label: 'Market Intelligence', icon: Newspaper }
     ]
   },
   {
     id: 'account-group',
-    title: 'ACCOUNT',
+    title: 'ACCOUNT & LEGAL',
     items: [
-      { key: 'profile', label: 'Profile', icon: User },
-      { key: 'billing', label: 'Billing & Licenses', icon: FileText },
-      { key: 'security', label: 'Security', icon: Lock }
-    ]
-  },
-  {
-    id: 'help-group',
-    title: 'HELP',
-    items: [
-      { key: 'support', label: 'Support', icon: LifeBuoy },
-      { key: 'legal', label: 'Risk & Legal', icon: FileCheck }
+      { key: 'profile', label: 'Profile Settings', icon: User },
+      { key: 'billing', label: 'Billing & Invoices', icon: FileText },
+      { key: 'legal-agreements', label: 'Agreements & Versioning', icon: Scale },
+      { key: 'legal', label: 'Risk Disclosures', icon: FileCheck },
+      { key: 'security', label: 'Security & 2FA', icon: Lock },
+      { key: 'support', label: 'Client Support Desk', icon: LifeBuoy }
     ]
   }
 ];
