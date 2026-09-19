@@ -103,7 +103,7 @@ export const PortalLayout: React.FC<PortalLayoutProps> = ({
                 Close [✕]
               </button>
             </div>
-            <DemoControlCenter onDismiss={() => setDemoModalOpen(false)} />
+            <DemoControlCenter onClose={() => setDemoModalOpen(false)} />
           </div>
         </div>
       )}

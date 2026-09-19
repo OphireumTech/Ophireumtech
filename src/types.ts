@@ -670,3 +670,10 @@ export interface SystemSettings {
   maintenanceMode: boolean;
   vpsAnnualPriceUSDT: number;
 }
+
+export type {
+  DemoTradingAccount,
+  DemoTradingAccount as DemoAccount,
+  DemoPosition,
+  DemoTrade
+} from './types/demo';

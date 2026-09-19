@@ -42,15 +42,18 @@ export interface DemoTradingAccount {
   grossLoss?: number;
   averageWin?: number;
   averageLoss?: number;
+  dailyPL?: number;
 }
 
 export interface DemoPosition {
   id: string;
   ticket: number;
-  symbol: 'XAUUSD';
+  symbol: 'XAUUSD' | string;
   direction: 'BUY' | 'SELL';
+  type?: 'BUY' | 'SELL';
   volume: number;
   openPrice: number;
+  entryPrice?: number;
   currentPrice: number;
   sl: number;
   tp: number;
@@ -58,6 +61,8 @@ export interface DemoPosition {
   takeProfit?: number;
   floatingPL: number;
   floatingProfit?: number;
+  unrealizedPL?: number;
+  profit?: number;
   commission: number;
   swap: number;
   openTime: string;
@@ -69,8 +74,9 @@ export interface DemoPosition {
 export interface DemoTrade {
   id: string;
   ticket: number;
-  symbol: 'XAUUSD';
+  symbol: 'XAUUSD' | string;
   direction: 'BUY' | 'SELL';
+  type?: 'BUY' | 'SELL';
   volume: number;
   entryPrice: number;
   exitPrice: number;
@@ -83,6 +89,7 @@ export interface DemoTrade {
   swap: number;
   netPL: number;
   netProfit?: number;
+  profit?: number;
   executionSource: string;
   eaVersion: string;
   account: string;

@@ -65,11 +65,12 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({ initialTab }) =>
       case 'kyc':
         return 'verification';
       case 'subscription':
-      case 'billing':
       case 'packages':
+        return 'subscription';
+      case 'billing':
       case 'license':
       case 'payments':
-        return 'subscription';
+        return 'billing';
       case 'connect-account':
       case 'binding':
       case 'mt5-binding':
@@ -128,6 +129,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({ initialTab }) =>
       case 'overview': return 'Dashboard Overview';
       case 'verification': return 'Identity Verification';
       case 'subscription': return 'Subscription & Licenses';
+      case 'billing': return 'Billing & Licenses';
       case 'connect-account': return 'Connect Trading Account';
       case 'trading-monitor': return 'Trading Monitor';
       case 'charts': return 'XAUUSD Chart Center';
@@ -155,6 +157,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({ initialTab }) =>
       case 'verification':
         return <IdentityVerificationView />;
       case 'subscription':
+      case 'billing':
         return <SubscriptionView />;
       case 'connect-account':
         return <ConnectAccountView />;
@@ -163,8 +166,9 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({ initialTab }) =>
           <TradingMonitorView
             account={demoState.account}
             positions={demoState.positions}
-            tradeHistory={demoState.trades}
-            onRefresh={() => demoEngine.evaluateMarketConditions()}
+            tradeHistory={demoState.tradeHistory}
+            initialSubTab="positions"
+            onRefresh={() => demoEngine.triggerMarketVolatility()}
           />
         );
       case 'charts':
@@ -174,8 +178,9 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({ initialTab }) =>
           <TradingMonitorView
             account={demoState.account}
             positions={demoState.positions}
-            tradeHistory={demoState.trades}
-            onRefresh={() => demoEngine.evaluateMarketConditions()}
+            tradeHistory={demoState.tradeHistory}
+            initialSubTab="performance"
+            onRefresh={() => demoEngine.triggerMarketVolatility()}
           />
         );
       case 'assistant':
@@ -183,7 +188,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({ initialTab }) =>
       case 'bot-control':
         return <BotControlView />;
       case 'market-intel':
-        return <DemoNewsCalendar onEventTrigger={() => demoEngine.evaluateMarketConditions()} />;
+        return <DemoNewsCalendar events={demoState.marketEvents} currentPrice={demoState.account.currentPrice} />;
       case 'profile':
         return <ProfileView />;
       case 'security':

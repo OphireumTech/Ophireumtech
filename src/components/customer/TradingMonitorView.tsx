@@ -26,15 +26,24 @@ interface TradingMonitorViewProps {
   positions?: DemoPosition[];
   tradeHistory?: DemoTrade[];
   onRefresh?: () => void;
+  initialSubTab?: 'positions' | 'history' | 'performance' | 'activity';
 }
 
 export const TradingMonitorView: React.FC<TradingMonitorViewProps> = ({
   account,
   positions = [],
   tradeHistory = [],
-  onRefresh
+  onRefresh,
+  initialSubTab = 'positions'
 }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'positions' | 'history' | 'performance' | 'activity'>('positions');
+  const [activeSubTab, setActiveSubTab] = useState<'positions' | 'history' | 'performance' | 'activity'>(initialSubTab);
+
+  React.useEffect(() => {
+    if (initialSubTab) {
+      setActiveSubTab(initialSubTab);
+    }
+  }, [initialSubTab]);
+
   const [expandedPositionId, setExpandedPositionId] = useState<string | null>(null);
 
   // Compute live floating P/L
